@@ -6,4 +6,12 @@
  *********************************************************************************************************************/
 "use strict";
 
-module.exports = () => {};
+const { frontiers_from_preds, frontiers_from_succs, reverse_flow } = require( './src/frontiers' );
+
+module.exports = {
+    yalt: require( './src/yalt' ),
+    iterative: require( './src/fast-iterative' ),
+    frontiers_from_preds,
+    frontiers_from_succs,
+    reverse_flow
+};

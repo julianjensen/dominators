@@ -10,18 +10,12 @@
 
 > Various dominator tree generators.
 
-## Remove This Section After Reading
+It implements two different methods for finding the immediate dominators of a graph.
 
-Make sure you update this *README* file and remove this section. By using copious amount of *JSDoc* tags you can ensure good code documentation. This module supports the automatic generation of an API document by typing `npm run mddocs` which will create a document `API.md` which you can link to or concatenate to this *README.md* file.
-
-It has also set up a unit test enviroment. Just type `npm test` to execute your unit tests which will be in the `test/` directory. It uses **mocha** and **chai** for testing.
-
-It has `.gitignore`, `.editorconfig`, and `.eslintrc.json` files in the project root.
-
-Here's how to finalize the **git** VCS for this project.
-
-1. Create your repository on https://github.com/julianjensen/dominators (Your project directory is already init'd and staged for commit)
-2. Type `git push -u origin master`
+1. Implements a near-linear time iterative dominator generator based on the
+    paper [A Simple, Fast Dominance Algorithm](https://www.cs.rice.edu/~keith/Embed/dom.pdf) using an iterative method<a href="#chk" id="chkref"><sup>1</sup></a>
+    
+2. Yet another Lengauer & Tarjan implementation with variations. From this paper<a href="#lt" id="ltref"><sup>2</sup></a> which you can find a link to it here (and many other places, in case this link goes bad): [A fast algorithm for finding dominators in a flowgraph](https://www.cs.princeton.edu/courses/archive/fall03/cs528/handouts/a%20fast%20algorithm%20for%20finding.pdf)
 
 ## Install
 
@@ -33,14 +27,53 @@ npm i dominators
 
 ```js
 const 
-    dominators = require( 'dominators' );
+    { 
+        iterative, 
+        yalt, 
+        frontiers_from_preds, 
+        frontiers_from_succs,
+        reverse_flow
+    } = require( 'dominators' ),
+    
+    someGraph = [
+                        [ 1, 8 ],    // start
+                        [ 2, 3 ],    // a
+                        [ 3 ],       // b
+                        [ 4, 5 ],    // c
+                        [ 6 ],       // d
+                        [ 6 ],       // e
+                        [ 7, 2 ],    // f
+                        [ 8 ],       // g
+                        []           // end
+                    ],
+    immediateDominators = iterative( someGraph ),
+    //  idoms = [ null, 0, 1, 1, 3, 3, 3, 6, 0 ],
 
-dominators() // true
+    df = frontiers_from_succs( someGraph, immediateDominators ),
+    // df = [ [], [ 8 ], [ 3 ], [ 2, 8 ], [ 6 ], [ 6 ], [ 2, 8 ], [ 8 ], [] ]
+    // or
+    same = frontiers_from_preds( reverse_flow( someGraph ), immediateDominators ),
+    // df = [ [], [ 8 ], [ 3 ], [ 2, 8 ], [ 6 ], [ 6 ], [ 2, 8 ], [ 8 ], [] ]
+
+    ltDoms = yalt( someGraph ),
+    //  ltDoms = [ null, 0, 1, 1, 3, 3, 3, 6, 0 ],
+    
+    // Your options for the last param is 'normal' (default), 'flat', and 'large'
+    // Each one uses slightly different implementations of eval and link
+    // You practically always want to leave it at the default 'normal'
+    ltDomsSame = yalt( someGraph, 0, 'large' );
+    //  ltDoms = [ null, 0, 1, 1, 3, 3, 3, 6, 0 ],
+
+
 ```
 
 ## License
 
 MIT © [Julian Jensen](https://github.com/julianjensen/dominators)
+
+<a id="chk" href="#chkref"><sup>1</sup></a> Cooper, Keith & Harvey, Timothy & Kennedy, Ken. (2006). A Simple, Fast Dominance Algorithm. Rice University, CS Technical Report 06-33870
+
+<a id="lt" href="#ltref"><sup>2</sup></a> Thomas Lengauer and Robert Endre Tarjan. 1979. A fast algorithm for finding dominators in a flowgraph. ACM Trans. Program. Lang. Syst. 1, 1 (January 1979), 121-141. DOI=http://dx.doi.org/10.1145/357062.357071
 
 [coveralls-url]: https://coveralls.io/github/julianjensen/dominators?branch=master
 [coveralls-image]: https://coveralls.io/repos/github/julianjensen/dominators/badge.svg?branch=master
@@ -62,3 +95,4 @@ MIT © [Julian Jensen](https://github.com/julianjensen/dominators)
 
 [david-dm-url]: https://david-dm.org/julianjensen/dominators
 [david-dm-image]: https://david-dm.org/julianjensen/dominators.svg
+

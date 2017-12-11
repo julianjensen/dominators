@@ -14,16 +14,24 @@ const
     { DFS } = require( 'traversals' );
 
 /**
- * @param {Array<Array<number>>} nodes
+ * @param {Array<Array<number>>} succs
  * @param {number} [rootIndex=0]
  * @return {Array<number>}
  */
-function IterativeDoms( nodes, rootIndex = 0 )
+function iterative( succs, rootIndex = 0 )
 {
     const
         idoms = [];
 
     let changed = true;
+
+    const nodes = [];
+
+    succs.forEach( ( _succs, i ) => {
+        nodes.push( { id: i, preds: [], succs: _succs, post: null } );
+    } );
+
+    nodes.forEach( ( n, i ) => n.succs.forEach( s => nodes[ s ].preds.push( i ) ) );
 
     nodes.forEach( () => idoms.push( null ) );
 
@@ -81,37 +89,8 @@ function IterativeDoms( nodes, rootIndex = 0 )
         cbs.post = void 0;
     }
 
+    idoms[ rootIndex ] = null;
     return idoms;
 }
 
-module.exports = IterativeDoms;
-
-const
-    testGraph = [
-        [ 1, 8 ],    // start
-        [ 2, 3 ],    // a
-        [ 3 ],       // b
-        [ 4, 5 ],    // c
-        [ 6 ],       // d
-        [ 6 ],       // e
-        [ 7, 2 ],    // f
-        [ 8 ],       // g
-        []           // end
-    ];
-
-const nodes = [];
-
-testGraph.forEach( ( succs, i ) => {
-    nodes.push( { id: i, preds: [], succs, post: null } );
-} );
-
-nodes.forEach( ( n, i ) => n.succs.forEach( s => nodes[ s ].preds.push( i ) ) );
-
-const
-    ri = IterativeDoms( nodes );
-
-nodes.forEach( ( n, i ) => {
-    console.log( `node ${i + 1} -> ${ri[ i ] + 1}` );
-} );
-// console.log( 'ri:', ri );
-
+module.exports = iterative;

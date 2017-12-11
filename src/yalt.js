@@ -15,13 +15,14 @@
 const
     { DFS } = require( 'traversals' );
 
+
 /**
  * @param {Array<Array<number>>} nodes
  * @param {number} [rootIndex=0]
- * @param {boolean} [impl="normal"]
+ * @param {string} [impl="normal"]
  * @return {Array<number>}
  */
-function YALT( nodes, rootIndex = 0, impl = 'normal' )
+function yalt( nodes, rootIndex = 0, impl = 'normal' )
 {
     let parent   = [],
         semi     = [],
@@ -32,14 +33,17 @@ function YALT( nodes, rootIndex = 0, impl = 'normal' )
         child    = [],
         size     = [],
 
+        succs = nodes,
+        preds = [],
+
         _link    = ( v, w ) => ancestor[ w ] = v,
 
         _simple_eval = ( v ) => {
             let a = ancestor[ v ];
 
-            if ( a === -1 ) return v;
+            if ( a === null ) return v;
 
-            while ( ancestor[ a ] !== -1 )
+            while ( ancestor[ a ] !== null )
             {
                 if ( semi[ v ] > semi[ a ] ) v = a;
                 a = ancestor[ a ];
@@ -51,7 +55,7 @@ function YALT( nodes, rootIndex = 0, impl = 'normal' )
         _compress    = v => {
             const a = ancestor[ v ];
 
-            if ( a === -1 ) return;
+            if ( a === null ) return;
 
             _compress( a );
 
@@ -62,7 +66,7 @@ function YALT( nodes, rootIndex = 0, impl = 'normal' )
         },
 
         _eval        = v => {
-            if ( ancestor[ v ] === -1 ) return v;
+            if ( ancestor[ v ] === null ) return v;
             _compress( v );
             return best[ v ];
         },
@@ -74,14 +78,14 @@ function YALT( nodes, rootIndex = 0, impl = 'normal' )
             do
             {
                 let cs  = child[ s ],
-                    bcs = cs !== -1 ? best[ cs ] : -1;
+                    bcs = cs !== null ? best[ cs ] : null;
 
-                if ( cs !== -1 && semi[ best[ w ] ] < semi[ bcs ] )
+                if ( cs !== null && semi[ best[ w ] ] < semi[ bcs ] )
                 {
                     let ccs  = child[ cs ],
                         ss   = size[ s ],
                         scs  = size[ cs ],
-                        sccs = ccs !== -1 ? size[ ccs ] : 0;
+                        sccs = ccs !== null ? size[ ccs ] : 0;
 
                     if ( ss - scs >= scs - sccs )
                         child[ s ] = ccs;
@@ -105,7 +109,7 @@ function YALT( nodes, rootIndex = 0, impl = 'normal' )
                 child[ v ] = t;
             }
             size[ v ] = size[ v ] + size[ w ];
-            while ( s !== -1 )
+            while ( s !== null )
             {
                 ancestor[ s ] = v;
                 s = child[ s ];
@@ -117,20 +121,30 @@ function YALT( nodes, rootIndex = 0, impl = 'normal' )
         large        = { link: _slink, eeval: _eval },
         { eeval, link } = impl === 'normal' ? normal : impl === 'flat' ? flat : impl = 'large' ? large : normal;
 
-    nodes.forEach( ( n, i ) => {
-        // parent[ i ] = n.parent ? n.parent.id : -1;
-        child[ i ] = -1;
-        // outEdges[ i ] = ( postDom ? n.succs : n.preds ).map( s => s.id );
+    nodes.forEach( ( _succs, i ) => {
+
+        child[ i ] = null;
         semi[ i ] = i;
-        ancestor[ i ] = -1;
+        ancestor[ i ] = null;
         best[ i ] = i;
         bucket[ i ] = [];
+        idom[ i ] = null;
+
+        preds.push( [] );
     } );
 
-    parent[ rootIndex ] = -1;
+    succs.forEach( ( _succs, i ) => {
+        _succs.forEach( s => {
+            if ( !preds[ s ].length )
+                parent[ s ] = i;
 
-    DFS( nodes, {
-        edge: { tree: ( from, to ) => parent[ to ] = from },
+            preds[ s ].push( i );
+        } );
+    } );
+
+    parent[ rootIndex ] = null;
+
+    DFS( succs, {
         rpre:    w => {
 
             if ( w === rootIndex ) return;
@@ -138,7 +152,7 @@ function YALT( nodes, rootIndex = 0, impl = 'normal' )
             const
                 p = parent[ w ];
 
-            for ( const v of nodes[ w ] )
+            for ( const v of preds[ w ] )
             {
                 const u = eeval( v );
 
@@ -152,7 +166,8 @@ function YALT( nodes, rootIndex = 0, impl = 'normal' )
             for ( const v of bucket[ p ] )
             {
                 const u = eeval( v );
-                idom[ v ] = semi[ u ] < p ? u : p;  // idom[ v ] = semi[ u ] < semi[ v ] ? u : p;
+                // idom[ v ] = semi[ u ] < p ? u : p;
+                idom[ v ] = semi[ u ] < semi[ v ] ? u : p;
             }
 
             bucket[ p ].length = 0;
@@ -166,41 +181,9 @@ function YALT( nodes, rootIndex = 0, impl = 'normal' )
             idom[ w ] = idom[ idom[ w ] ];
     } );
 
-    idom[ rootIndex ] = void 0;
+    idom[ rootIndex ] = null;
 
     return idom;
 }
 
-module.exports = YALT;
-
-
-const
-    testGraph = [
-        [ 1, 8 ],    // start
-        [ 2, 3 ],    // a
-        [ 3 ],       // b
-        [ 4, 5 ],    // c
-        [ 6 ],       // d
-        [ 6 ],       // e
-        [ 7, 2 ],    // f
-        [ 8 ],       // g
-        []           // end
-    ];
-
-const nodes = [];
-
-testGraph.forEach( ( succs, i ) => {
-    nodes.push( { id: i, preds: [], succs, post: null } );
-} );
-
-nodes.forEach( ( n, i ) => n.succs.forEach( s => nodes[ s ].preds.push( i ) ) );
-
-const
-    ri = YALT( nodes.map( n => n.preds ) );
-
-nodes.forEach( ( n, i ) => {
-    console.log( `node ${i + 1} -> ${ri[ i ] + 1}` );
-} );
-// console.log( 'ri:', ri );
-
-
+module.exports = yalt;
