@@ -5,7 +5,6 @@
  * Cooper, Keith & Harvey, Timothy & Kennedy, Ken. (2006). A Simple, Fast Dominance Algorithm. Rice University, CS Technical Report 06-33870
  *
  * @author Julian Jensen <jjdanois@gmail.com>
- * @since 1.0.0
  * @date 10-Dec-2017
  *********************************************************************************************************************/
 "use strict";
