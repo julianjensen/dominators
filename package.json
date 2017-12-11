@@ -18,10 +18,7 @@
         "postpublish": "git push origin master --follow-tags",
         "toc": "doctoc --github --title \"# Changelog\" CHANGELOG.md"
     },
-    "repository": {
-        "type": "git",
-        "url": "git+https://github.com/julianjensen/dominators.git"
-    },
+    "repository": "https://github.com/julianjensen/dominators.git",
     "keywords": [
         "dominator",
         "idom",
