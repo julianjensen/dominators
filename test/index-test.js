@@ -101,6 +101,7 @@ describe( 'dominators', function() {
         it( 'should find all immediate dominators in large mode', () => {
             expect( yalt( testGraph, 0, 'large' ) ).to.eql( correctIdoms );
         } );
+        
     } );
 
     describe( 'Dominanace frontiers', function() {
