@@ -6,11 +6,7 @@
 [![npm version][npm-image]][npm-url]
 [![License][license-image]][license-url]
 [![Known Vulnerabilities][snyk-image]][snyk-url]
-[![Codacy Badge][codacy-image]][codacy-url]
 [![david-dm][david-dm-image]][david-dm-url]
-[![bitHound Code][bithound-image]][bithound-url]
-[![Code Climate][codeclimate-image]][codeclimate-url]
-[![Codebeat Badge][codebeat-image]][codebeat-url]
 
 > Various dominator tree generators.
 
@@ -64,18 +60,5 @@ MIT © [Julian Jensen](https://github.com/julianjensen/dominators)
 [snyk-url]: https://snyk.io/test/github/julianjensen/dominators
 [snyk-image]: https://snyk.io/test/github/julianjensen/dominators/badge.svg
 
-[codacy-url]: https://www.codacy.com/app/julianjensen/dominators?utm_source=github.com&amp;amp;utm_medium=referral&amp;amp;utm_content=julianjensen/dominators&amp;amp;utm_campaign=Badge_Grade
-[codacy-image]: https://api.codacy.com/project/badge/Grade/
-
 [david-dm-url]: https://david-dm.org/julianjensen/dominators
 [david-dm-image]: https://david-dm.org/julianjensen/dominators.svg
-
-[bithound-url]: https://www.bithound.io/github/julianjensen/dominators
-[bithound-image]: https://www.bithound.io/github/julianjensen/dominators/badges/code.svg
-
-[codeclimate-url]: https://codeclimate.com/github/julianjensen/dominators
-[codeclimate-image]: https://codeclimate.com/github/julianjensen/dominators/badges/gpa.svg
-
-[codebeat-url]: https://codebeat.co/projects/github-com-undefined-dominators-master
-[codebeat-image]: https://codebeat.co/badges/
-

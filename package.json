@@ -25,10 +25,12 @@
     "keywords": [
         "dominator",
         "idom",
-        "immediate",
+        "immediate dominator",
         "tree",
         "dominance",
-        "frontier"
+        "frontier",
+        "lengauer",
+        "tarjan"
     ],
     "author": "Julian Jensen <jjdanois@gmail.com>",
     "license": "MIT",
@@ -47,5 +49,8 @@
         "dependency-check": "^2.5.1",
         "doctoc": "^0.15.0",
         "mocha-lcov-reporter": "^1.3.0"
+    },
+    "dependencies": {
+        "traversals": "^1.0.2"
     }
 }
