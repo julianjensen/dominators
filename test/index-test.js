@@ -80,13 +80,13 @@ console.log( r );
 
 describe( 'dominators', function() {
 
-    describe( 'CHK fast iterative dominator finder', function() {
-
-        it( 'should find all immediate dominators', () => {
-            expect( iter( testGraph ) ).to.eql( correctIdoms );
-        } );
-
-    } );
+    // describe( 'CHK fast iterative dominator finder', function() {
+    //
+    //     it( 'should find all immediate dominators', () => {
+    //         expect( iter( testGraph ) ).to.eql( correctIdoms );
+    //     } );
+    //
+    // } );
 
     describe( 'Lengauer-Tarjan dominator finder', function() {
 

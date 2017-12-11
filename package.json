@@ -9,8 +9,6 @@
         "test": "istanbul cover node_modules/mocha/bin/_mocha -- ./test/",
         "coveralls": "istanbul cover ./node_modules/mocha/bin/_mocha --report lcovonly -- -R spec && cat ./coverage/lcov.info | ./node_modules/coveralls/bin/coveralls.js",
         "postcoveralls": "rimraf ./coverage",
-        "codacy": "istanbul cover ./node_modules/mocha/bin/_mocha --report lcovonly -- -R spec && cat ./coverage/lcov.info | ./node_modules/.bin/codacy-coverage",
-        "postcodacy": "rimraf ./coverage",
         "prepublish": "npm test",
         "patch": "npm version patch && npm publish",
         "minor": "npm version minor && npm publish",
@@ -41,13 +39,12 @@
         "mocha": "^3.5.0",
         "chai": "^4.1.1",
         "coveralls": "^2.13.1",
-        "codacy-coverage": "^2.0.2",
         "rimraf": "^2.4.2",
         "dependency-check": "^2.5.1",
         "doctoc": "^0.15.0",
         "mocha-lcov-reporter": "^1.3.0"
     },
     "dependencies": {
-        "traversals": "^1.0.2"
+        "traversals": "^1.0.4"
     }
 }
