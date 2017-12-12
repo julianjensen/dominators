@@ -9,7 +9,7 @@
         "test": "istanbul cover node_modules/mocha/bin/_mocha -- ./test/",
         "coveralls": "istanbul cover ./node_modules/mocha/bin/_mocha --report lcovonly -- -R spec && cat ./coverage/lcov.info | ./node_modules/coveralls/bin/coveralls.js",
         "postcoveralls": "rimraf ./coverage",
-        "prepublish": "npm test",
+        "prepublishOnly": "npm test",
         "patch": "npm version patch && npm publish",
         "minor": "npm version minor && npm publish",
         "major": "npm version major && npm publish",
@@ -45,6 +45,6 @@
         "mocha-lcov-reporter": "^1.3.0"
     },
     "dependencies": {
-        "traversals": "^1.0.4"
+        "traversals": "^1.0.5"
     }
 }
