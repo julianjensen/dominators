@@ -13,7 +13,7 @@
 "use strict";
 
 const
-    { DFS } = require( 'traversals' );
+    { DFS, BFS } = require( 'traversals' );
 
 
 /**
@@ -33,12 +33,12 @@ function yalt( nodes, rootIndex = 0, impl = 'normal' )
         child    = [],
         size     = [],
 
-        succs = nodes,
-        preds = [],
+        succs    = nodes,
+        preds    = [],
 
-        _link    = ( v, w ) => ancestor[ w ] = v,
+        _link    = ( w ) => ancestor[ w ] = parent[ w ],
 
-        _simple_eval = ( v ) => {
+        _simple_eval    = ( v ) => {
             let a = ancestor[ v ];
 
             if ( a === null ) return v;
@@ -52,26 +52,26 @@ function yalt( nodes, rootIndex = 0, impl = 'normal' )
             return v;
         },
 
-        _compress    = v => {
-            const a = ancestor[ v ];
+        _compress       = v => {
+            const u = ancestor[ v ];
 
-            if ( a === null ) return;
+            if ( u === null ) return;
 
-            _compress( a );
+            _compress( u );
 
-            if ( semi[ best[ v ] ] > semi[ best[ a ] ] )
-                best[ v ] = best[ a ];
+            if ( semi[ best[ u ] ] < semi[ best[ v ] ] )
+                best[ v ] = best[ u ];
 
-            ancestor[ v ] = ancestor[ a ];
+            ancestor[ v ] = ancestor[ u ];
         },
 
-        _eval        = v => {
+        _eval           = v => {
             if ( ancestor[ v ] === null ) return v;
             _compress( v );
             return best[ v ];
         },
 
-        _slink       = ( w ) => {
+        _slink          = ( w ) => {
             let s = w,
                 v = parent[ w ];
 
@@ -116,10 +116,45 @@ function yalt( nodes, rootIndex = 0, impl = 'normal' )
             }
         },
 
-        flat         = { link: _link, eeval: _simple_eval },
-        normal       = { link: _link, eeval: _eval },
-        large        = { link: _slink, eeval: _eval },
-        { eeval, link } = impl === 'normal' ? normal : impl === 'flat' ? flat : impl = 'large' ? large : normal;
+        flat            = { link: _link, eeval: _simple_eval },
+        normal          = { link: _link, eeval: _eval },
+        large           = { link: _slink, eeval: _eval },
+        { eeval, link } = { link: _link, eeval: _eval }, // impl === 'normal' ? normal : impl === 'flat' ? flat : impl === 'large' ? large : normal,
+        init_to_null    = ( a, lng ) => {
+            for ( let _ = 0; _ < lng; _++ )
+                a[ _ ] = null;
+        };
+
+    const
+        nice    = c => c === void 0 || c === null ? 'u' : c === 0 ? 'r' : String.fromCharCode( 0x60 + c ),
+        niceNum = n => n + 1 > 9 ? '' + ( n + 1 ) : ' ' + ( n + 1 );
+
+    if ( impl === 'snik' ) console.log( 'prnt:', parent.map( c => ' ' + nice( c ) ).join( ' ' ) );
+
+    // const
+    //     index2pre = [],
+    //     pre2index = [];
+    //
+    //
+    // DFS( succs, {
+    //     pre: ( preNum, preOrder ) => {
+    //         index2pre[ preNum ] = preOrder;
+    //         pre2index[ preOrder ] = preNum;
+    //
+    //         semi[ preOrder ] = preOrder;
+    //         best[ preOrder ] = preOrder;
+    //         bucket[ preOrder ] = new Set();
+    //
+    //         child[ preOrder ] = null;
+    //         ancestor[ preOrder ] = null;
+    //
+    //         preds[ preOrder ] = [];
+    //     }
+    // } );
+
+    // index2pre.forEach( ( p, i ) => {
+    //     console.log( `node index: ${i + 1} => ${p + 1}` );
+    // } );
 
     nodes.forEach( ( _succs, i ) => {
 
@@ -127,27 +162,49 @@ function yalt( nodes, rootIndex = 0, impl = 'normal' )
         semi[ i ] = i;
         ancestor[ i ] = null;
         best[ i ] = i;
-        bucket[ i ] = [];
-        idom[ i ] = null;
+        bucket[ i ] = new Set();
 
         preds.push( [] );
     } );
 
     succs.forEach( ( _succs, i ) => {
         _succs.forEach( s => {
-            if ( !preds[ s ].length )
-                parent[ s ] = i;
+            // s = index2pre[ s ];
+            // i = index2pre[ i ];
+
+            // if ( !preds[ s ].length )
+            //     parent[ s ] = i;
+            //
+            // if ( parent[ s ] === null || parent[ s ] < i )
+            //     parent[ s ] = i;
 
             preds[ s ].push( i );
         } );
     } );
 
-    parent[ rootIndex ] = null;
+    // parent[ index2pre[ rootIndex ] ] = null;
+    parent[ 0 ] = null;
+    // semi[ 0 ] = null;
+
 
     DFS( succs, {
-        rpre:    w => {
+        edge: {
+            tree: ( from, to ) => parent[ to ] = from
+            // tree: ( from, to ) => best[ to ] = parent[ to ] = from
+        } } );
 
-            if ( w === rootIndex ) return;
+    console.log( 'parent:' );
+    nodes.forEach( ( x, n ) => {
+        console.log( `${n + 1}: ${parent[ n ] === null ? '-' : parent[ n ] + 1}, preds: ${preds[ n ].map( p => p + 1 ).join( ' ' )}` );
+    } );
+
+    DFS( succs, {
+        excludeRoot: true,
+        // pre: ( pre, seq ) => impl === 'snik' && console.log( `pre: ${nice( pre )}, seq: ${nice( seq )}` ),
+        rpre:        w => {
+
+            semi[ w ] = w;
+            // if ( w === rootIndex ) return;
 
             const
                 p = parent[ w ];
@@ -156,34 +213,136 @@ function yalt( nodes, rootIndex = 0, impl = 'normal' )
             {
                 const u = eeval( v );
 
-                if ( semi[ w ] > semi[ u ] )
+                // semi[ w ] = Math.min( semi[ w ], semi[ x ] );
+                if ( semi[ u ] < semi[ w ] )
                     semi[ w ] = semi[ u ];
             }
 
-            bucket[ semi[ w ] ].push( w );
+            // if ( !bucket[ semi[ w ] ] )
+            //     console.log( 'boom w:', w );
+            //     console.log( 'boom semi[ w ]:', semi[ w ] );
+            bucket[ semi[ w ] ].add( w );
             link( w ); // _slink( w ) for faster version (but slower under real conditions)
 
             for ( const v of bucket[ p ] )
             {
-                const u = eeval( v );
-                // idom[ v ] = semi[ u ] < p ? u : p;
-                idom[ v ] = semi[ u ] < semi[ v ] ? u : p;
+                const y = eeval( v );
+                // idom[ v ] = semi[ y ] < p ? y : p;
+                idom[ v ] = semi[ y ] < semi[ v ] ? y : p;
             }
 
-            bucket[ p ].length = 0;
+            bucket[ p ].clear();
+            // bucket[ p ].length = 0;
         }
     } );
 
-    nodes.forEach( ( node, w ) => {
-        if ( w === rootIndex ) return;
+    // console.log( 'parent:' );
+    // index2pre.forEach( ( pre, id ) => {
+    //     console.log( `${id + 1}: ${parent[ pre ] + 1}` );
+    // } );
 
-        if ( idom[ w ] !== semi[ w ] )
-            idom[ w ] = idom[ idom[ w ] ];
+    console.log( 'semi:' );
+    nodes.forEach( ( pre, id ) => {
+        console.log( `${id + 1}: ${semi[ id ] + 1}` );
     } );
+
+    console.log( 'idom:' );
+    nodes.forEach( ( pre, id ) => {
+        console.log( `${id + 1}: ${idom[ id ] + 1}` );
+    } );
+    // if ( impl === 'snik' ) console.log( 'semi:', semi.map( s => fixed.preNodes[ s ] + 1 ).map( niceNum ).join( ' ' ) );
+    // if ( impl === 'snik' ) console.log( 'idom:', idom.map( c => ' ' + nice( c ) ).join( ' ' ) );
+
+    DFS( succs, {
+        excludeRoot: true,
+        pre:         w => {
+            if ( idom[ w ] !== semi[ w ] )
+                idom[ w ] = idom[ idom[ w ] ];
+        }
+    } );
+    // nodes.forEach( ( node, w ) => {
+    //     if ( w === rootIndex ) return;
+    //
+    //     if ( idom[ w ] !== semi[ w ] )
+    //         idom[ w ] = idom[ idom[ w ] ];
+    // } );
 
     idom[ rootIndex ] = null;
 
+    // return idom.map( n => pre2index[ n ] );
+    // return fixed.toIndex( idom );
     return idom;
 }
 
+function nodes_to_pre( nodes, rootIndex )
+{
+    const
+        index2pre = [],
+        preNodes  = [];
+
+    DFS( nodes, {
+        pre: ( nodeNum, preOrder ) => {
+            preNodes[ preOrder ] = nodeNum;
+            index2pre[ nodeNum ] = preOrder;
+        }
+    } );
+
+    nodes = nodes.map( succs => succs.map( s => index2pre[ s ] ) );
+    return { rootIndex: index2pre[ rootIndex ], preNodes, preOrdered: nodes.map( ( n, i ) => nodes[ index2pre[ i ] ] ), toIndex: idoms => idoms.map( n => preNodes[ n ] ) };
+}
+
 module.exports = yalt;
+
+let
+    r       = 0,
+    a       = 1,
+    b       = 2,
+    c       = 3,
+    d       = 4,
+    e       = 5,
+    f       = 6,
+    g       = 7,
+    h       = 8,
+    i       = 9,
+    j       = 10,
+    k       = 11,
+    l       = 12,
+
+    dfs = [
+        r, c, f, i, k, g, j, b, e, h, a, d, l
+    ],
+    rlarger = [
+        [ c, b, a ],    // r
+        [ d ],          // a
+        [ e, a, d ],    // b
+        [ f, g ],       // c
+        [ l ],          // d,
+        [ h ],          // e
+        [ i ],          // f
+        [ j, i ],       // g
+        [ e, k ],       // h
+        [ k ],          // i
+        [ i ],          // j
+        [ i, r ],       // k
+        [ h ]           // l
+    ],
+    oneBased = [
+        [ 2, 8, 11 ],   // 1
+        [ 3, 6 ],       // 2
+        [ 4 ],          // 3
+        [ 5 ],          // 4
+        [ 4, 1 ],       // 5
+        [ 7, 4 ],       // 6
+        [ 4 ],          // 7
+        [ 9, 11, 12 ],  // 8
+        [ 10 ],         // 9
+        [ 9, 5 ],       // 10
+        [ 12 ],         // 11
+        [ 13 ],         // 12
+        [ 10 ]          // 13
+    ];
+
+oneBased = oneBased.map( arr => arr.map( n => n - 1 ) );
+
+const result = yalt( oneBased );
+console.log( 'final idoms:', result );

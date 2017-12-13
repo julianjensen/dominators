@@ -45,6 +45,6 @@
         "mocha-lcov-reporter": "^1.3.0"
     },
     "dependencies": {
-        "traversals": "^1.0.5"
+        "traversals": "^1.0.8"
     }
 }
