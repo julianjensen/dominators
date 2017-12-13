@@ -9,7 +9,7 @@
 const { frontiers_from_preds, frontiers_from_succs, reverse_flow } = require( './src/frontiers' );
 
 module.exports = {
-    yalt: require( './src/yalt' ),
+    lt: require( './src/lt' ),
     iterative: require( './src/fast-iterative' ),
     frontiers_from_preds,
     frontiers_from_succs,

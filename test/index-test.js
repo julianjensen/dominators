@@ -9,7 +9,8 @@
 const
     { DFS } = require( 'traversals' ),
     expect = require( 'chai' ).expect,
-    { iterative: iter, yalt, frontiers_from_preds, frontiers_from_succs, reverse_flow } = require( '../index' ),
+    graph = require( '../data/lengtarj.json' ),
+    { iterative: iter, lt, frontiers_from_preds, frontiers_from_succs, reverse_flow } = require( '../index' ),
     rg = `          ┌─────────┐
 ┌─────────┤ START 0 │
 │         └────┬────┘
@@ -81,7 +82,7 @@ testGraph = [
         [ 1, 2 ],
         [ 3 ],
         [ 3 ],
-        [ 4, 5 ],
+        [ 5, 4 ],
         [ 6 ],
         [ 0, 7 ]
     ],
@@ -158,54 +159,54 @@ describe( 'dominators', function() {
 
     describe( 'Lengauer-Tarjan dominator finder', function() {
 
-        // it( 'should find all immediate dominators', () => {
-        //     expect( yalt( testGraph ) ).to.eql( correctIdoms );
-        // } );
-        //
-        // it( 'should find all immediate dominators in flat mode', () => {
-        //     expect( yalt( testGraph, 0, 'flat' ) ).to.eql( correctIdoms );
-        // } );
-
-        it( 'should find all immediate dominators in large mode', () => {
-            const preInOrder = [];
-
-            DFS( rlarger, { pre: ( index, pre ) => preInOrder[ index ] = pre } );
-            console.log( '     ' + preInOrder.map( niceNum ).join( '' ) );
-            console.log( '       ' + nums );
-            console.log( '       ' + ltrs );
-            console.log( 'yalt:', yalt( rlarger, 0, 'snik' ).map( c => ' ' + nice( c ) ).join( ' ' ) );
-            console.log( 'okay:', largeIdoms.map( c => ' ' + nice( c ) ).join( ' ' ) );
-            // expect( yalt( larger, 0, 'normal' ) ).to.eql( largeIdoms );
+        it( 'should find all immediate dominators', () => {
+            console.log( lt( {
+                nodes:      testGraph,
+                startIndex: 0,
+                flat:       true
+            } ) );
+            console.log( correctIdoms );
+            expect( lt( { nodes: testGraph, startIndex: 0, flat: true } ) ).to.eql( correctIdoms );
         } );
 
-        // it( 'should default to finding all immediate dominators in normal mode', () => {
-        //     expect( yalt( testGraph, 0, 'snargle' ) ).to.eql( correctIdoms );
-        // } );
+        it( 'should find all immediate dominators in flat mode', () => {
+            console.log( lt( {
+                nodes:      testGraph,
+                startIndex: 0,
+                flat:       false
+            } ) );
+            console.log( correctIdoms );
+            expect( lt( { nodes: testGraph, startIndex: 0, flat: false } ) ).to.eql( correctIdoms );
+        } );
+
+        it( 'should find all immediate dominators in large mode', () => {
+            expect( lt( { nodes: graph.graph } ) ).to.eql( graph.idom );
+        } );
 
     } );
 
-    // describe( 'Dominanace frontiers', function() {
-    //
-    //     it( 'should check for trivial cases and throw errors when required', () => {
-    //         expect( frontiers_from_succs.bind( null, testGraph, [ 1, 2, 3, 4 ] ) ).to.throw( Error );
-    //         expect( frontiers_from_preds( [ 1 ], [ null ] ) ).to.eql( [ [] ] );
-    //         expect( frontiers_from_preds( [], [] ) ).to.eql( [] );
-    //     } );
-    //
-    //     it( 'should determine the dominance frontiers from successors', () => {
-    //         expect( frontiers_from_succs.bind( null, testGraph ) ).to.throw( TypeError );
-    //         expect( frontiers_from_succs( mixedGraph, correctIdoms ) ).to.eql( correctFrontiers );
-    //     } );
-    //
-    //     it( 'should create predecessors from successors', () => {
-    //         expect( reverse_flow.bind( null, 'hello' ) ).to.throw( TypeError );
-    //         expect( reverse_flow( testGraph ) ).to.eql( preds );
-    //     } );
-    //
-    //     it( 'should determine the dominance frontiers from predecessors', () => {
-    //         expect( frontiers_from_preds.bind( null, testGraph ) ).to.throw( TypeError );
-    //         expect( frontiers_from_preds( preds, correctIdoms ) ).to.eql( correctFrontiers );
-    //     } );
-    //
-    // } );
+    describe( 'Dominanace frontiers', function() {
+
+        it( 'should check for trivial cases and throw errors when required', () => {
+            expect( frontiers_from_succs.bind( null, testGraph, [ 1, 2, 3, 4 ] ) ).to.throw( Error );
+            expect( frontiers_from_preds( [ 1 ], [ null ] ) ).to.eql( [ [] ] );
+            expect( frontiers_from_preds( [], [] ) ).to.eql( [] );
+        } );
+
+        it( 'should determine the dominance frontiers from successors', () => {
+            expect( frontiers_from_succs.bind( null, testGraph ) ).to.throw( TypeError );
+            expect( frontiers_from_succs( mixedGraph, correctIdoms ) ).to.eql( correctFrontiers );
+        } );
+
+        it( 'should create predecessors from successors', () => {
+            expect( reverse_flow.bind( null, 'hello' ) ).to.throw( TypeError );
+            expect( reverse_flow( testGraph ) ).to.eql( preds );
+        } );
+
+        it( 'should determine the dominance frontiers from predecessors', () => {
+            expect( frontiers_from_preds.bind( null, testGraph ) ).to.throw( TypeError );
+            expect( frontiers_from_preds( preds, correctIdoms ) ).to.eql( correctFrontiers );
+        } );
+
+    } );
 } );
