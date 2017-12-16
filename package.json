@@ -49,6 +49,6 @@
         "npm-run-all": "^4.1.2"
     },
     "dependencies": {
-        "traversals": "^1.0.9"
+        "traversals": "^1.0.11"
     }
 }

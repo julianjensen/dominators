@@ -35,8 +35,6 @@ function iterative( succs, startIndex = 0, flat = true )
         nodes.push( { id: i, preds: preds[ i ], succs, post: null } );
     } );
 
-    // nodes.forEach( ( n, i ) => n.succs.forEach( s => nodes[ s ].preds.push( i ) ) );
-
     nodes.forEach( () => idoms.push( null ) );
 
     idoms[ startIndex ] = startIndex;
