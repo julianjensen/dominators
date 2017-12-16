@@ -10,38 +10,43 @@
 "use strict";
 
 const
+    { normalize, succs_to_preds } = require( './utils' ),
     { DFS } = require( 'traversals' );
 
 /**
- * @param {Array<Array<number>>} succs
- * @param {number} [rootIndex=0]
+ * @param {Array<Array<number>|number>} succs
+ * @param {number} [startIndex=0]
+ * @param {boolean} [flat=true]
  * @return {Array<number>}
  */
-function iterative( succs, rootIndex = 0 )
+function iterative( succs, startIndex = 0, flat = true )
 {
     const
         idoms = [];
 
     let changed = true;
 
-    const nodes = [];
+    const
+        nsuccs = normalize( succs ),
+        preds = succs_to_preds( nsuccs ),
+        nodes = [];
 
-    succs.forEach( ( _succs, i ) => {
-        nodes.push( { id: i, preds: [], succs: _succs, post: null } );
+    nsuccs.forEach( ( succs, i ) => {
+        nodes.push( { id: i, preds: preds[ i ], succs, post: null } );
     } );
 
-    nodes.forEach( ( n, i ) => n.succs.forEach( s => nodes[ s ].preds.push( i ) ) );
+    // nodes.forEach( ( n, i ) => n.succs.forEach( s => nodes[ s ].preds.push( i ) ) );
 
     nodes.forEach( () => idoms.push( null ) );
 
-    idoms[ rootIndex ] = rootIndex;
+    idoms[ startIndex ] = startIndex;
 
     /**
      * @param {number} index
      */
     function find_idoms( index )
     {
-        if ( index === rootIndex ) return;
+        if ( index === startIndex ) return;
 
         const b = nodes[ index ];
 
@@ -78,7 +83,9 @@ function iterative( succs, rootIndex = 0 )
     const
         cbs = {
             rpost: find_idoms,
-            post: ( id, postNum ) => nodes[ id ].post = postNum
+            post: ( id, postNum ) => nodes[ id ].post = postNum,
+            startIndex,
+            flat
         };
 
     while ( changed )
@@ -88,7 +95,7 @@ function iterative( succs, rootIndex = 0 )
         cbs.post = void 0;
     }
 
-    idoms[ rootIndex ] = null;
+    idoms[ startIndex ] = null;
     return idoms;
 }
 

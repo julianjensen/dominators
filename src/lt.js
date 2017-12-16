@@ -1,5 +1,65 @@
 /** ******************************************************************************************************************
- * @file Describe what lt does.
+ * @file See README.md for details
+ *
+ * For the sake of completeness, below is the fast balanaced version of link, which is not included in the current module code
+ * for two reasons:
+ *
+ * 1. The LT algorithm with this LINK only becomes faster than the normal implementation when we're dealing with
+ *    10s or 100s of thousands of nodes, in which cases you shouldn't be using JavaScript anyway.
+ * 2. I don't have test graph large enough to get proper coverage so, since it's not really useful,
+ *    I decided to remove it.
+ *
+ * This implementation uses arrays rather then an object. That's how I originally implemented this algorithm
+ * but that makes it incompatible with the current implementation. I won't convert it since it's not used, however,
+ * because it is interesting, I've included it here, for interested parties, of which there will probably be at least
+ * zero but not more.
+ *
+ * @example
+ *     balanced_link = ( w ) => {
+ *         let s = w,
+ *             v = parent[ w ];
+ *
+ *         do
+ *         {
+ *             let cs  = child[ s ],
+ *                 bcs = cs !== null ? best[ cs ] : null;
+ *
+ *             if ( cs !== null && semi[ best[ w ] ] < semi[ bcs ] )
+ *             {
+ *                 let ccs  = child[ cs ],
+ *                     ss   = size[ s ],
+ *                     scs  = size[ cs ],
+ *                     sccs = ccs !== null ? size[ ccs ] : 0;
+ *
+ *                 if ( ss - scs >= scs - sccs )
+ *                     child[ s ] = ccs;
+ *                 else
+ *                 {
+ *                     size[ cs ] = ss;
+ *                     ancestor[ s ] = cs;
+ *                     s = cs;
+ *                 }
+ *             }
+ *             else
+ *                 break;
+ *         }
+ *         while ( true );
+ *
+ *         best[ s ] = best[ w ];
+ *         if ( size[ v ] < size[ w ] )
+ *         {
+ *             let t = s;
+ *             s = child[ v ];
+ *             child[ v ] = t;
+ *         }
+ *         size[ v ] = size[ v ] + size[ w ];
+ *         while ( s !== null )
+ *         {
+ *             ancestor[ s ] = v;
+ *             s = child[ s ];
+ *         }
+ *     }
+ *
  * @author Julian Jensen <jjdanois@gmail.com>
  * @since 1.0.0
  * @date 12-Dec-2017
@@ -7,6 +67,7 @@
 "use strict";
 
 const
+    { normalize } = require( './utils' ),
     { DFS } = require( 'traversals' );
 
 /**
@@ -15,27 +76,12 @@ const
  * @param {number} [startIndex=0]
  * @param {boolean} [flat=true]
  */
-function lt( { nodes, startIndex = 0, flat = true } )
+function lt( nodes, startIndex = 0, flat = true )
 {
-    nodes = nodes.map( n => typeof n === 'number' ? [ n ] : n );
+    nodes = normalize( nodes );
 
     const
         _link = ( v, w ) => w.ancestor = v,
-
-        simple_eval = v => {
-            let a = v.ancestor;
-
-            if ( a === null ) return v;
-
-            while ( a.ancestor !== null )
-            {
-                if ( v.semi.pre > a.semi.pre )
-                    v = a;
-                a = a.ancestor;
-            }
-
-            return v;
-        },
 
         flat_compress = v => {
 
@@ -97,11 +143,7 @@ function lt( { nodes, startIndex = 0, flat = true } )
             bucket: [],
 
             idom:     null,
-            ancestor: null,
-            toString()
-            {
-                return `id: ${this.id + 1}, pre: ${this.pre + 1}, semi: ${this.semi ? this.semi.pre : '-'}, idom: ${this.idom ? this.idom.pre : '-'}`;
-            }
+            ancestor: null
         } ) );
 
     let preOrder = [];
@@ -118,20 +160,18 @@ function lt( { nodes, startIndex = 0, flat = true } )
             node.best = node;
 
             preOrder.push( node );
-        }
+        },
+        flat,
+        startIndex
     } );
 
     listOrder.forEach( node => node.succs.forEach( s => listOrder[ s ].preds.push( node ) ) );
 
-    // preOrder.forEach( p => console.log( `${p}` ) );
-
-    for ( let i = preOrder.length - 1; i > 0; --i )
+    for ( let i = preOrder.length; --i > 0; )
     {
         const
             w = preOrder[ i ],
             p = w.parent;
-
-        if ( !w.id ) continue;
 
         w.preds.forEach( v => {
             const u = _eval( v );
@@ -159,69 +199,7 @@ function lt( { nodes, startIndex = 0, flat = true } )
     } );
 
     preOrder[ 0 ].idom = null;
-    return listOrder.map( n => n.idom ? n.idom.pre : null );
-    // return listOrder;
+    return listOrder.map( n => n.idom ? n.idom.id : null );
 }
 
-// const
-//     // testGraph = [
-//     //     [ 1, 8 ],    // start
-//     //     [ 2, 3 ],    // a
-//     //     [ 3 ],       // b
-//     //     [ 4, 5 ],    // c
-//     //     [ 6 ],       // d
-//     //     [ 6 ],       // e
-//     //     [ 7, 2 ],    // f
-//     //     [ 8 ],       // g
-//     //     []           // end
-//     // ],
-//     // r = 0,
-//     // a = 1,
-//     // b = 2,
-//     // c = 3,
-//     // d = 4,
-//     // e = 5,
-//     // f = 6,
-//     // g = 7,
-//     // h = 8,
-//     // i = 9,
-//     // j = 10,
-//     // k = 11,
-//     // l = 12,
-//     //
-//     // rlarger   = [
-//     //     [ c, b, a ],    // r
-//     //     [ d ],          // a
-//     //     [ e, a, d ],    // b
-//     //     [ f, g ],       // c
-//     //     [ l ],          // d,
-//     //     [ h ],          // e
-//     //     [ i ],          // f
-//     //     [ j, i ],       // g
-//     //     [ e, k ],       // h
-//     //     [ k ],          // i
-//     //     [ i ],          // j
-//     //     [ i, r ],       // k
-//     //     [ h ]           // l
-//     // ],
-//
-// const
-//     graph  = require( '../data/lengtarj.json' ),
-//     result = lt( { nodes: graph.graph, startIndex: 0, flat: true } );
-// // result = lt( testGraph );s
-//
-// // console.log( result.map( n => typeof n === 'number' ? n + 1 : n ) );
-// // console.log( graph.idom.map( n => n === null ? '-' : n + 1 ) );
-//
-// result.forEach( ( node, i ) => {
-//     const
-//         two = n => n < 10 ? ' ' + n : n,
-//         data = n => n === null ? ' -' : two( n + 1 ),
-//         res = n => typeof n === 'number' ? two( n + 1 ) : ' ' + n,
-//         idom = node.idom ? node.idom.pre : '-',
-//         sdom = node.semi ? node.semi.pre + 1: '-';
-//
-//     console.log( `${two( i + 1 )}: ${res( idom )} => ${data( graph.idom[ i ] )}, semi: ${two( sdom )} => ${data( graph.semi[ i ] )}` );
-// } );
-// console.log( 'result:', result );
 module.exports = lt;

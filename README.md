@@ -29,7 +29,7 @@ npm i dominators
 const 
     { 
         iterative, 
-        yalt, 
+        lt, 
         frontiers_from_preds, 
         frontiers_from_succs,
         reverse_flow
@@ -55,7 +55,7 @@ const
     same = frontiers_from_preds( reverse_flow( someGraph ), immediateDominators ),
     // df = [ [], [ 8 ], [ 3 ], [ 2, 8 ], [ 6 ], [ 6 ], [ 2, 8 ], [ 8 ], [] ]
 
-    ltDoms = yalt( someGraph ),
+    ltDoms = lt( someGraph ),
     //  ltDoms = [ null, 0, 1, 1, 3, 3, 3, 6, 0 ],
     
     // Your options for the last param is 'normal' (default), 'flat', and 'large'
@@ -65,6 +65,68 @@ const
     //  ltDoms = [ null, 0, 1, 1, 3, 3, 3, 6, 0 ],
 
 
+```
+
+### Fast Lengauer-Tarjan LINK procedure
+
+For the sake of completeness, below is the fast balanaced version of link, which is not included in the current module code
+for two reasons:
+
+1. The LT algorithm with this LINK only becomes faster than the normal implementation when we're dealing with
+   10s or 100s of thousands of nodes, in which cases you shouldn't be using JavaScript anyway.
+2. I don't have test graph large enough to get proper coverage so, since it's not really useful,
+   I decided to remove it.
+
+This implementation uses arrays rather then an object. That's how I originally implemented this algorithm
+but that makes it incompatible with the current implementation. I won't convert it since it's not used, however,
+because it is interesting, I've included it here, for interested parties, of which there will probably be at least
+zero but not more.
+
+```js
+    balanced_link = ( w ) => {
+        let s = w,
+            v = parent[ w ];
+
+        do
+        {
+            let cs  = child[ s ],
+                bcs = cs !== null ? best[ cs ] : null;
+
+            if ( cs !== null && semi[ best[ w ] ] < semi[ bcs ] )
+            {
+                let ccs  = child[ cs ],
+                    ss   = size[ s ],
+                    scs  = size[ cs ],
+                    sccs = ccs !== null ? size[ ccs ] : 0;
+
+                if ( ss - scs >= scs - sccs )
+                    child[ s ] = ccs;
+                else
+                {
+                    size[ cs ] = ss;
+                    ancestor[ s ] = cs;
+                    s = cs;
+                }
+            }
+            else
+                break;
+        }
+        while ( true );
+
+        best[ s ] = best[ w ];
+        if ( size[ v ] < size[ w ] )
+        {
+            let t = s;
+            s = child[ v ];
+            child[ v ] = t;
+        }
+        size[ v ] += size[ w ];
+        while ( s !== null )
+        {
+            ancestor[ s ] = v;
+            s = child[ s ];
+        }
+    }
 ```
 
 ## License

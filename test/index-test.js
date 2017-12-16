@@ -82,7 +82,7 @@ testGraph = [
         [ 1, 2 ],
         [ 3 ],
         [ 3 ],
-        [ 5, 4 ],
+        [ 4, 5 ],
         [ 6 ],
         [ 0, 7 ]
     ],
@@ -159,28 +159,20 @@ describe( 'dominators', function() {
 
     describe( 'Lengauer-Tarjan dominator finder', function() {
 
-        it( 'should find all immediate dominators', () => {
-            console.log( lt( {
-                nodes:      testGraph,
-                startIndex: 0,
-                flat:       true
-            } ) );
-            console.log( correctIdoms );
-            expect( lt( { nodes: testGraph, startIndex: 0, flat: true } ) ).to.eql( correctIdoms );
+        it( 'should find all immediate dominators in recusive', () => {
+            expect( lt( testGraph, 0, false ) ).to.eql( correctIdoms );
         } );
 
         it( 'should find all immediate dominators in flat mode', () => {
-            console.log( lt( {
-                nodes:      testGraph,
-                startIndex: 0,
-                flat:       false
-            } ) );
-            console.log( correctIdoms );
-            expect( lt( { nodes: testGraph, startIndex: 0, flat: false } ) ).to.eql( correctIdoms );
+            expect( lt( testGraph, 0, true ) ).to.eql( correctIdoms );
         } );
 
-        it( 'should find all immediate dominators in large mode', () => {
-            expect( lt( { nodes: graph.graph } ) ).to.eql( graph.idom );
+        it( 'should find all immediate dominators in flat mode', () => {
+            expect( lt( graph.graph, 0, true ) ).to.eql( graph.idom );
+        } );
+
+        it( 'should find all immediate dominators in recursive mode', () => {
+            expect( lt( graph.graph, 0, false ) ).to.eql( graph.idom );
         } );
 
     } );

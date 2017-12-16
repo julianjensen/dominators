@@ -14,7 +14,7 @@
         "minor": "npm version minor && npm publish",
         "major": "npm version major && npm publish",
         "postpublish": "git push origin master --follow-tags",
-        "toc": "doctoc --github --title \"# Changelog\" CHANGELOG.md"
+        "version": "auto-changelog -p && git add CHANGELOG.md"
     },
     "repository": "https://github.com/julianjensen/dominators.git",
     "keywords": [
@@ -34,10 +34,10 @@
     },
     "homepage": "https://github.com/julianjensen/dominators#readme",
     "devDependencies": {
+        "auto-changelog": "^1.2.2",
         "chai": "^4.1.1",
         "coveralls": "^2.13.1",
         "dependency-check": "^2.5.1",
-        "doctoc": "^0.15.0",
         "eslint": "^4.4.0",
         "get-stdin": "^5.0.1",
         "istanbul": "^0.4.5",
@@ -46,6 +46,6 @@
         "rimraf": "^2.4.2"
     },
     "dependencies": {
-        "traversals": "^1.0.8"
+        "traversals": "^1.0.9"
     }
 }
