@@ -55,13 +55,16 @@ const
     same = frontiers_from_preds( reverse_flow( someGraph ), immediateDominators ),
     // df = [ [], [ 8 ], [ 3 ], [ 2, 8 ], [ 6 ], [ 6 ], [ 2, 8 ], [ 8 ], [] ]
 
-    ltDoms = lt( someGraph ),
+    // See the explanation of parameters below.
+    ltDoms = lt( someGraph, 0, true ),
     //  ltDoms = [ null, 0, 1, 1, 3, 3, 3, 6, 0 ],
     
-    // Your options for the last param is 'normal' (default), 'flat', and 'large'
-    // Each one uses slightly different implementations of eval and link
-    // You practically always want to leave it at the default 'normal'
-    ltDomsSame = yalt( someGraph, 0, 'large' );
+    // The first parameter is your graph, an array of arrays of successor indices.
+    // The second parameter is the start node, defaults to 0. This is optional and defaults to 0.
+    // The last parameter is an optional boolean for whether to run it flat or not.
+    // If it runs flat (set to true) then it will not use recursion for the DFS or the compress
+    // function. The default is true.
+    ltDomsSame = lt( someGraph, 0, true );
     //  ltDoms = [ null, 0, 1, 1, 3, 3, 3, 6, 0 ],
 
 
