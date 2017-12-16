@@ -1,6 +1,6 @@
 {
     "name": "dominators",
-    "version": "1.0.3",
+    "version": "1.0.4",
     "description": "Various dominator tree generators.",
     "main": "index.js",
     "scripts": {
