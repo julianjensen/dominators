@@ -10,7 +10,7 @@ const
     { DFS } = require( 'traversals' ),
     expect = require( 'chai' ).expect,
     graph = require( '../data/lengtarj.json' ),
-    { iterative: iter, lt, frontiers_from_preds, frontiers_from_succs, reverse_flow, succs_to_preds } = require( '../index' ),
+    { iterative: iter, lt, frontiers_from_preds, frontiers_from_succs, reverse_flow, succs_to_preds, preds_to_succs } = require( '../index' ),
     rg = `          ┌─────────┐
 ┌─────────┤ START 0 │
 │         └────┬────┘
@@ -203,8 +203,13 @@ describe( 'dominators', function() {
     } );
 
     describe( 'Utility functions', function() {
+        let revd;
+
         it( 'should convert successors to predecessors', () => {
-            expect( succs_to_preds( graph.graph ) ).to.eql( [ [ 11 ],
+            revd = succs_to_preds( larger );
+
+            expect( revd ).to.eql( [
+                [ 11 ],
                 [ 0, 2 ],
                 [ 0 ],
                 [ 0 ],
@@ -216,7 +221,12 @@ describe( 'dominators', function() {
                 [ 6, 7, 10, 11 ],
                 [ 7 ],
                 [ 8, 9 ],
-                [ 4 ] ] );
+                [ 4 ]
+            ] );
+        } );
+
+        it( 'should also convert them back again', () => {
+            expect( preds_to_succs( revd ) ).to.eql( larger );
         } );
     } );
 } );

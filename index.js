@@ -7,7 +7,7 @@
 "use strict";
 
 const { frontiers_from_preds, frontiers_from_succs, reverse_flow } = require( './src/frontiers' ),
-      { preds_to_succs, succs_to_preds } = require( './src/utils' );
+      { preds_to_succs, succs_to_preds, normalize } = require( './src/utils' );
 
 module.exports = {
     lt: require( './src/lt' ),
@@ -16,5 +16,6 @@ module.exports = {
     frontiers_from_succs,
     reverse_flow,
     succs_to_preds,
-    preds_to_succs
+    preds_to_succs,
+    normalize
 };
