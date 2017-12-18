@@ -7,24 +7,34 @@
 'use strict';
 
 const
-    promisify          = require( 'util' ).promisify,
-    fs                 = require( 'fs' ),
-    readFile           = promisify( fs.readFile ),
-    getStdin           = require( 'get-stdin' ),
-    { isArray: array } = Array,
-    { DFS, BFS }       = require( 'traversals' );
-
-let _read,
-    result = {
+    readFile = fname => new Promise( ( res, rej ) => require( 'fs' ).readFile( fname, 'utf8', ( err, data ) => err ? rej( err ) : res( data ) ) ),
+    getStdin = require( 'get-stdin' ),
+    result   = {
         graph: []
     };
 
-if ( process.argv[ 2 ] )
-    _read = readFile( process.argv[ 2 ], 'utf8' );
-else
-    _read = getStdin();
+if ( require && require.main === module )
+{
 
-_read.then( src => {
+    file2graph( process.argv[ 2 ] ? readFile( process.argv[ 2 ], 'utf8' ) : getStdin() )
+        .then( text2graph )
+        .then( result => console.log( JSON.stringify( result, null, 4 ) ) );
+}
+else
+    module.exports = {
+        text2graph,
+        file2graph
+    };
+
+function file2graph( fileName )
+{
+    if ( typeof fileName !== 'string' && !( fileName instanceof Buffer ) )
+        throw new TypeError( `"File name must be a string or buffer, received ${fileName}` );
+    return readFile( fileName, 'utf8' ).then( text2graph );
+}
+
+function text2graph( src )
+{
     const lines = src.split( /[\r\n]+/ ).map( s => s.trim() ).filter( l => !!l );
 
     let mode  = 'graph',
@@ -36,9 +46,9 @@ _read.then( src => {
 
         if ( m )
         {
-            mode           = m[ 1 ].toLowerCase();
+            mode = m[ 1 ].toLowerCase();
             result[ mode ] = [];
-            index          = 0;
+            index = 0;
         }
         else
         {
@@ -61,119 +71,5 @@ _read.then( src => {
 
     Object.entries( result ).forEach( ( [ key, value ] ) => !value.length && delete result[ key ] );
 
-    console.log( JSON.stringify( result, null, 4 ) );
-    determine_graph( result.graph );
-} );
-
-function determine_graph( nodes )
-{
-    const
-        { levels } = BFS( nodes ),
-        index2pre  = [],
-        parents    = [],
-        edges      = [];
-
-    DFS( nodes, {
-        edge( from, to, type )
-        {
-            if ( type === 'tree' )
-                parents[ to ] = from;
-
-            array( edges[ from ] ) || ( edges[ from ] = [] );
-
-            edges[ from ].push( { from, to, type } );
-        },
-        pre: ( preNum, preOrder ) => index2pre[ preNum ] = preOrder
-    } );
-
-    let lanes = [],
-        maxLanes = 0,
-        perLane = 5,
-        allLanes;
-
-    for ( let lvl = 0; ; lvl++ )
-    {
-        const clvl = nodes.map( ( _, i ) => levels[ i ] === lvl ? i : null ).filter( n => n !== null );
-        let lng = clvl.length;
-
-        if ( !lng ) break;
-        if ( lng & 1 ) lng++;
-        lanes.push( lng );
-        if ( lng > maxLanes ) maxLanes = lng;
-        console.log( `Level ${lvl} => ${clvl.join( ' ' )}` );
-    }
-
-    allLanes = maxLanes * perLane;
-
-    const
-        realMax = lanes.reduce( ( prev, b ) => {
-            const r = lcm( prev, b );
-            console.log( `lcm red: ${prev}, ${b} => ${r}` );
-            return r;
-        }, 1 ),
-        altMax = lanes.reduce( ( prev, b ) => {
-            const r = gcd( prev, b );
-            console.log( `red: ${prev}, ${b} => ${r}` );
-            return r;
-        }, 1 );
-
-    console.log( 'lanes:', lanes );
-    console.log( 'max:', maxLanes );
-    console.log( 'real max:', realMax );
-    console.log( 'alt max:', altMax );
-
-    // console.log( nodes.map( ( _, i ) => `${i + 1}: ${levels[ i ] + 1}` ).join( '\n' ) );
-}
-
-/*
-1 c
-2 l r
-3 l c r
-4 l c c r
-5 l c c c r
-6 l l c c r r
-7 l l c c c r r
-8 l l c c c c r r
-9 l l l c c c r r r
-A l l l c c c c r r r
-
-edges / 3 = number of each connection side
-edges % 3 = additional center connections
- */
-
-function blocks2lanes( nodes, pl, total )
-{
-    const
-        groupByParentPre = {},
-        finalOrder = [];
-
-    nodes.forEach( n => ( groupByParentPre[ n.parent.pre ] || ( groupByParentPre[ n.parent.pre ] = [] ) ).push( n ) );
-
-    Object.entries( groupByParentPre ).forEach( gpp => gpp.sort( ( a, b ) => a.pre - b.pre ) );
-
-    Object.keys( groupByParentPre ).map( n => Number( n ) ).sort().forEach( gpp => finalOrder.push( ...groupByParentPre[ gpp ] ) );
-
-}
-
-
-
-function gcd( a, b )
-{
-    if ( !b ) return a;
-
-    let rem = 0;
-    do {
-        rem = a % b;
-        a = b;
-        b = rem;
-    } while ( b );
-
-    return a;
-}
-
-function lcm( a, b )
-{
-    if ( !a || !b ) return 0;
-
-    return a * b / gcd( a, b );
+    return result;
 }

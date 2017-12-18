@@ -62,7 +62,7 @@ testGraph = [
         [ 6 ],       // e
         [ 7, 2 ],    // f
         [ 8 ],       // g
-        []           // end
+        void 0           // end
     ],
     mixedGraph = [
         [ 1, 8 ],    // start
