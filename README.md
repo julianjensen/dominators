@@ -32,7 +32,7 @@ const
         lt, 
         frontiers_from_preds, 
         frontiers_from_succs,
-        reverse_flow
+        reverse_graph
     } = require( 'dominators' ),
     
     someGraph = [
@@ -52,7 +52,7 @@ const
     df = frontiers_from_succs( someGraph, immediateDominators ),
     // df = [ [], [ 8 ], [ 3 ], [ 2, 8 ], [ 6 ], [ 6 ], [ 2, 8 ], [ 8 ], [] ]
     // or
-    same = frontiers_from_preds( reverse_flow( someGraph ), immediateDominators ),
+    same = frontiers_from_preds( reverse_graph( someGraph ), immediateDominators ),
     // df = [ [], [ 8 ], [ 3 ], [ 2, 8 ], [ 6 ], [ 6 ], [ 2, 8 ], [ 8 ], [] ]
 
     // See the explanation of parameters below.
@@ -67,7 +67,16 @@ const
     ltDomsSame = lt( someGraph, 0, true );
     //  ltDoms = [ null, 0, 1, 1, 3, 3, 3, 6, 0 ],
 
+// Read full API documentation below
+const myGraph = make_dom( graph );
 
+myGraph.forStrictDominators( n => console.log( `${n} is a strict dominator of 9` ), 9 );
+
+if ( myGraph.strictlyDominates( 7, 9 ) )
+    console.log( `7 strictly dominates 9` );
+
+console.log( `Node at index 7 strictly dominates these: ${myGraph.strictlyDominates( 7 ).join( ', ' )}` );
+console.log( `The strict dominators of 7 are ${myGraph.strictDominators( 7 ).join( ', ' )}` );
 ```
 
 ### Fast Lengauer-Tarjan LINK procedure
