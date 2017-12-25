@@ -7,6 +7,8 @@
 'use strict';
 
 const
+    argv = require( 'minimist' )( process.argv.slice( 2 ) ),
+    offset = argv.r || argv.renumber ? -1 : 0,
     readFile = fname => new Promise( ( res, rej ) => require( 'fs' ).readFile( fname, 'utf8', ( err, data ) => err ? rej( err ) : res( data ) ) ),
     getStdin = require( 'get-stdin' ),
     result   = {
@@ -16,7 +18,8 @@ const
 if ( require && require.main === module )
 {
 
-    file2graph( process.argv[ 2 ] ? readFile( process.argv[ 2 ], 'utf8' ) : getStdin() )
+    // file2graph( process.argv[ 2 ] ? readFile( process.argv[ 2 ], 'utf8' ) : getStdin() )
+    ( argv._.length ? readFile( argv._[ 0 ], 'utf8' ) : getStdin() )
         .then( text2graph )
         .then( result => console.log( JSON.stringify( result, null, 4 ) ) );
 }
@@ -55,16 +58,16 @@ function text2graph( src )
             m = line.match( /^(\d+)(?:([^-\d]+)(.*))?/ );
 
             if ( m[ 1 ] && m[ 2 ] && !m[ 3 ] )
-                result[ mode ][ index = Number( m[ 1 ] ) - 1 ] = [];
+                result[ mode ][ index = Number( m[ 1 ] ) + offset ] = [];
             else if ( m[ 1 ] && m[ 2 ] && m[ 3 ].trim() === '-' )
-                result[ mode ][ index = Number( m[ 1 ] ) - 1 ] = null;
+                result[ mode ][ index = Number( m[ 1 ] ) + offset ] = null;
             else if ( m[ 1 ] && !m[ 2 ] && !m[ 3 ] )
-                result[ mode ][ index++ ] = Number( m[ 1 ] ) - 1;
+                result[ mode ][ index++ ] = Number( m[ 1 ] ) + offset;
             else
             {
-                const vals = m[ 3 ].split( /[\s,:]+/ ).map( s => s.trim() ).filter( s => !!s ).map( v => v === '-' ? null : Number( v ) - 1 );
+                const vals = m[ 3 ].split( /[\s,:]+/ ).map( s => s.trim() ).filter( s => !!s ).map( v => v === '-' ? null : Number( v ) + offset );
 
-                result[ mode ][ index = Number( m[ 1 ] ) - 1 ] = vals.length === 1 ? vals[ 0 ] : vals;
+                result[ mode ][ index = Number( m[ 1 ] ) + offset ] = vals.length === 1 ? vals[ 0 ] : vals;
             }
         }
     }

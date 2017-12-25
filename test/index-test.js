@@ -10,7 +10,17 @@ const
     { DFS } = require( 'traversals' ),
     expect = require( 'chai' ).expect,
     graph = require( '../data/lengtarj.json' ),
-    { iterative: iter, lt, frontiers_from_preds, frontiers_from_succs, reverse_flow, succs_to_preds, preds_to_succs } = require( '../index' ),
+    ladder = require( '../data/medium.json' ),
+    {
+        iterative: iter,
+        lt,
+        frontiers_from_preds,
+        frontiers_from_succs,
+        reverse_graph,
+        succs_to_preds,
+        preds_to_succs,
+        normalize
+    } = require( '../index' ),
     rg = `          ┌─────────┐
 ┌─────────┤ START 0 │
 │         └────┬────┘
@@ -155,6 +165,14 @@ describe( 'dominators', function() {
             expect( iter( larger ) ).to.eql( largeIdoms );
         } );
 
+        it( 'should find all immediate dominators in flat mode using a ladder graph', () => {
+            expect(iter( ladder.graph, 0, true ) ).to.eql( ladder.idom );
+        } );
+
+        it( 'should find all immediate dominators in recursive mode using a ladder graph', () => {
+            expect( iter( ladder.graph, 0, false ) ).to.eql( ladder.idom );
+        } );
+
     } );
 
     describe( 'Lengauer-Tarjan dominator finder', function() {
@@ -175,9 +193,17 @@ describe( 'dominators', function() {
             expect( lt( graph.graph, 0, false ) ).to.eql( graph.idom );
         } );
 
+        it( 'should find all immediate dominators in flat mode using a ladder graph', () => {
+            expect( lt( ladder.graph, 0, true ) ).to.eql( ladder.idom );
+        } );
+
+        it( 'should find all immediate dominators in recursive mode using a ladder graph', () => {
+            expect( lt( ladder.graph, 0, false ) ).to.eql( ladder.idom );
+        } );
+
     } );
 
-    describe( 'Dominanace frontiers', function() {
+    describe( 'Dominance frontiers', function() {
 
         it( 'should check for trivial cases and throw errors when required', () => {
             expect( frontiers_from_succs.bind( null, testGraph, [ 1, 2, 3, 4 ] ) ).to.throw( Error );
@@ -188,11 +214,12 @@ describe( 'dominators', function() {
         it( 'should determine the dominance frontiers from successors', () => {
             expect( frontiers_from_succs.bind( null, testGraph ) ).to.throw( TypeError );
             expect( frontiers_from_succs( mixedGraph, correctIdoms ) ).to.eql( correctFrontiers );
+            expect( frontiers_from_succs( ladder.graph, ladder.idom ) ).to.eql( normalize( ladder.frontier ) );
         } );
 
         it( 'should create predecessors from successors', () => {
-            expect( reverse_flow.bind( null, 'hello' ) ).to.throw( TypeError );
-            expect( reverse_flow( testGraph ) ).to.eql( preds );
+            expect( reverse_graph.bind( null, 'hello' ) ).to.throw( TypeError );
+            expect( reverse_graph( testGraph ) ).to.eql( preds );
         } );
 
         it( 'should determine the dominance frontiers from predecessors', () => {

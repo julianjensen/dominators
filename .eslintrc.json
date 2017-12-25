@@ -67,7 +67,7 @@
             2,
             {
                 "before": true,
-                "after": true
+                "after": false
             }
         ],
         "handle-callback-err": [

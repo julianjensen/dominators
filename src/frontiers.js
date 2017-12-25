@@ -8,22 +8,19 @@
 
 const
     { isArray: array } = Array,
+    { normalize, reverse_graph, simpleRefToSelf } = require( './utils' ),
     consistent = list => list.map( l => array( l ) ? l : typeof l === 'number' ? [ l ] : [] );
 
-/**
- * @param {Array<Array<number>>} succs
- */
-function reverse_flow( succs )
-{
-    if ( !array( succs ) )
-        throw new TypeError( `The list of successor lists must be an array` );
-
-    const preds = succs.map( () => [] );
-
-    consistent( succs ).forEach( ( _succs, i ) => _succs.forEach( s => preds[ s ].push( i ) ) );
-
-    return preds;
-}
+// /**
+//  * @param {Array<Array<number>>} succs
+//  */
+// function reverse_flow( succs )
+// {
+//     if ( !array( succs ) )
+//         throw new TypeError( `The list of successor lists must be an array` );
+//
+//     return simpleRefToSelf( normalize( succs ) );
+// }
 
 /**
  * Find dominance frontiers
@@ -84,7 +81,7 @@ function frontiers_from_preds( preds, idoms )
  */
 function frontiers_from_succs( succs, idoms )
 {
-    return frontiers_from_preds( reverse_flow( succs ), idoms );
+    return frontiers_from_preds( reverse_graph( normalize( succs ) ), idoms );
 }
 
-module.exports = { frontiers_from_preds, frontiers_from_succs, reverse_flow };
+module.exports = { frontiers_from_preds, frontiers_from_succs };

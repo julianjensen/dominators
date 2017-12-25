@@ -5,35 +5,58 @@
  *********************************************************************************************************************/
 "use strict";
 
-/**
- * @param {Array<Array<number>>} nodes
- * @return {Array<Array<number>>}}
- */
-function succs_to_preds( nodes )
-{
-    const preds = nodes.map( () => [] );
+const
+    arrayOfArrays = list => list.map( () => [] ),
+    notNull       = chk => chk !== null,
+    twoOrMore     = chk => chk.length > 1,
 
-    nodes.forEach( ( succs, i ) => succs.forEach( s => preds[ s ].push( i ) ) );
+    /**
+     * @param {Array<Array<number>>} seed
+     * @param {function(number):boolean} [chk]
+     * @param {Array<Array<number>>} [dest]
+     * @return {Array<Array<number>>}}
+     */
+    condRefToSelf   = ( seed, chk = twoOrMore, dest = arrayOfArrays( seed ) ) => (
+        seed.forEach( ( refIndex, selfIndex ) =>
+            chk( refIndex ) &&
+            (
+                Array.isArray( refIndex )
+                    ? refIndex.forEach( ref => dest[ ref ].push( selfIndex ) )
+                    : dest[ refIndex ].push( selfIndex )
+            )
+        ), dest
+    ),
 
-    return preds;
-}
+    /**
+     * @param {Array<Array<number>>} seed
+     * @param {Array<Array<number>>} [dest]
+     * @return {Array<Array<number>>}}
+     */
+    simpleRefToSelf = ( seed, dest = arrayOfArrays( seed ) ) => (
+        seed.forEach( ( refIndex, selfIndex ) =>
 
-/**
- * @param {Array<Array<number>>} nodes
- * @return {Array<Array<number>>}}
- */
-function preds_to_succs( nodes )
-{
-    const succs = nodes.map( () => [] );
-
-    nodes.forEach( ( preds, i ) => preds.forEach( p => succs[ p ].push( i ) ) );
-
-    return succs;
-}
+            Array.isArray( refIndex )
+                ? refIndex.forEach( ref => dest[ ref ].push( selfIndex ) )
+                : dest[ refIndex ].push( selfIndex )
+        ), dest
+    );
 
 module.exports = {
-    succs_to_preds,
-    preds_to_succs,
+    arrayOfArrays,
+    simpleRefToSelf,
+    reverse_graph( succs ) {
+        if ( !Array.isArray( succs ) )
+            throw new TypeError( `The list of successor lists must be an array` );
+
+        return simpleRefToSelf( module.exports.normalize( succs ) );
+    },
+    succs_to_preds: simpleRefToSelf,
+    preds_to_succs: simpleRefToSelf,
+
+    create_dom_tree: nodes => condRefToSelf( nodes, notNull ),
+    // nullable_ref_to_self: nodes => condRefToSelf( nodes, notNull ),
+    // joinsets_ref_to_self: nodes => condRefToSelf( nodes, twoOrMore ),
+
     /**
      * @param {Array<Array<number>|number>} nodes
      * @return {Array<Array<number>>}}
