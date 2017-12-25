@@ -1,21 +1,47 @@
 /** ******************************************************************************************************************
- * @file Describe what dom-tree does.
+ * @file Utilities for working with dominators and their frontiers.
  * @author Julian Jensen <jjdanois@gmail.com>
  * @since 1.0.0
  * @date 23-Dec-2017
  *********************************************************************************************************************/
 "use strict";
 
+/**
+ * @typedef {object} DomWalkerOptions
+ * @property {Array<Array<number>>} nodes
+ * @property {Array<?number>} [idoms]
+ * @property {Array<Array<number>>} [domTree]
+ * @property {Array<Array<number>>} [jEdges]
+ * @property {Array<Array<number>>} [frontiers]
+ * @property {Array<Array<Array<number>>>} [djGraph]
+ * @property {Array<number>} [domLevels]
+ */
+
+/**
+ * @typedef {object} GraphNode
+ * @property {number} id            - The index of this node in the original array
+ * @property {Array<number>} succs       - The successor node indices
+ * @property {Array<number>} preds       - The predecessor node indices
+ * @property {Array<number>} domSuccs    - The dominator tree successor indices
+ * @property {number} idom          - The immediate dominator and, of course, dominator tree predecessor
+ * @property {number} level         - The depth (or level) of the vertex
+ * @property {number} domLevel      - The depth in the dominator tree
+ * @property {Array<number>} jSuccs      - The successor J-edges, if any, of this node
+ * @property {Array<number>} jPreds      - The predecessor J-edges, if any, of this node
+ */
+
+
 const
     { isArray: array }       = Array,
     {
         normalize,
-        create_dom_tree,
-        succs_to_preds,
-        arrayOfArrays
+        create_dj_graph,
+        create_levels,
+        simpleRefToSelf
     }                        = require( './utils' ),
 
     iterative                = require( './fast-iterative' ),
+    { frontiers_from_preds } = require( './frontiers' ),
     simple_dfs = tree => {
         const pre = [], post = [];
 
@@ -38,123 +64,34 @@ const
         return [ pre, post ];
     };
 
-function create_j_edges( _nodes, domLevels, domTree, idoms )
-{
-    const
-        nodes = normalize( _nodes ),
-        preds = succs_to_preds( nodes ),
-        jTree = arrayOfArrays( preds );
-
-    if ( !domLevels && !domTree && !idoms )
-        idoms = iterative( nodes );
-
-    if ( !domLevels && !domTree )
-        domTree = create_dom_tree( idoms );
-
-    if ( !domLevels )
-        domLevels = create_levels( domTree );
-
-    for ( let index = 0, lng = nodes.length; index < lng; ++index )
-    {
-        if ( preds[ index ].length < 2 ) continue;
-
-        const lvl = domLevels[ index ];
-
-        for ( const p of preds[ index ] )
-        {
-            if ( domLevels[ p ] >= lvl )
-                jTree[ p ].push( index );
-        }
-    }
-
-    return jTree;
-}
-
-function create_levels( nodes )
-{
-    let worklist = [ 0 ],
-        visited  = [ true ],
-        levels   = [ 0 ],
-        max      = -Infinity;
-
-    while ( worklist.length )
-    {
-        let item  = worklist.shift(),
-            succs = nodes[ item ];
-
-        for ( let i = 0, lng = succs.length; i < lng; ++i )
-        {
-            const n = succs[ i ];
-            if ( visited[ n ] ) continue;
-            visited[ n ] = true;
-            levels[ n ] = levels[ item ] + 1;
-            if ( levels[ n ] > max ) max = levels[ n ];
-            worklist.push( n );
-        }
-    }
-
-    Object.defineProperty( levels, 'max', { value: max, enumerable: false } );
-    return levels;
-}
-
-function create_nodes( _nodes, idoms )
-{
-    const
-        succs     = normalize( _nodes ),
-        preds     = succs_to_preds( succs );
-
-    if ( !idoms ) idoms = iterative( succs );
-
-    const
-        domTree   = create_dom_tree( idoms ),
-        domPreds  = succs_to_preds( domTree ),
-        levels    = create_levels( succs ),
-        domLevels = create_levels( domTree ),
-        jSuccs    = create_j_edges( succs ),
-
-        nodes     = _nodes.map( ( n, i ) => ( {
-            succs:    succs[ i ],
-            preds:    preds[ i ],
-            domSuccs: domTree[ i ],
-            idom:     domPreds[ i ][ 0 ],
-            level:    levels[ i ],
-            domLevel: domLevels[ i ],
-            jSuccs:   jSuccs[ i ],
-            jPreds:   []
-        } ) );
-
-    nodes.forEach( ( { jSuccs }, i ) => jSuccs.forEach( s => nodes[ s ].jPreds.push( i ) ) );
-
-    return nodes;
-}
-
-function create_dj_graph( nodes, idoms, domTree )
-{
-
-    if ( !idoms && !domTree )
-        idoms = iterative( nodes );
-
-    if ( !domTree )
-        domTree = create_dom_tree( idoms );
-
-    const jt = create_j_edges( nodes );
-
-    return nodes.map( ( _, i ) => [ domTree[ i ], jt[ i ] ] );
-}
-
 /**
- * @typedef {object} DomWalkerOptions
- * @property {Array<Array<number>>} nodes
- * @property {Array<?number>} [idoms]
- * @property {Array<Array<number>>} [domTree]
- * @property {Array<Array<number>>} [jEdges]
- * @property {Array<Array<number>>} [frontiers]
- * @property {Array<Array<number>, Array<number>>} [djGraph]
- * @property {Array<number>} [domLevels]
- */
-
-/**
+ * This will associated a graph with a number of useful utility functions. It will return an
+ * object with a variety of functions that operate on the graphs.
+ *
+ * You might notice that many of these functions I took from the WebKit `dominators.h` file, which
+ * I really liked, and, although I re-wrote the code completely (obviously, since it was in `C++`), I decided
+ * to keep their comments with a few small alterations or corrections. I decided to not use their iterated dominance frontier
+ * code, because it was as efficient as it could be. Instead, I implemented one that uses a DJ-graph
+ * that I found in Chapter 4 of "The SSA Book," called "Advanced Contruction Algorithms for SSA" by
+ * _D. Das_, _U. Ramakrishna_, _V. Sreedhar_. That book doesn't seem to be published or, if it has, I've
+ * missed it. You can build the book yourself, supposedly, (I couldn't make that work, though) from here: [SSA Book](https://gforge.inria.fr/scm/?group_id=1950)
+ * or you can probably find a PDF version of it somewhere on the web, which is what I did.
+ *
+ * @example
+ * const myGraph = make_dom( graph );
+ *
+ * myGraph.forStrictDominators( n => console.log( `${n} is a strict dominator of 9` ), 9 );
+ *
+ * @example
+ * if ( myGraph.strictlyDominates( 7, 9 ) )
+ *     console.log( `7 strictly dominates 9` );
+ *
+ * @example
+ * console.log( `Node at index 7 strictly dominates these: ${myGraph.strictlyDominates( 7 ).join( ', ' )}` );
+ * console.log( `The strict dominators of 7 are ${myGraph.strictDominators( 7 ).join( ', ' )}` );
+ *
  * @param {DomWalkerOptions|Array<Array<number>>} opts
+ * @return {{forStrictDominators: forStrictDominators, forDominators: forDominators, strictDominators: strictDominators, dominators: dominators, forStrictlyDominates: forStrictlyDominates, forDominates: forDominates, strictlyDominates: strictlyDominates, dominates: dominates, forDominanceFrontier: forDominanceFrontier, dominanceFrontier: dominanceFrontier, forIteratedDominanceFrontier: forIteratedDominanceFrontier, forPrunedIteratedDominanceFrontier: forPrunedIteratedDominanceFrontier, iterated_dominance_frontier: iterated_dominance_frontier, iteratedDominanceFrontier: iteratedDominanceFrontier}}
  */
 function make_dom( opts )
 {
@@ -196,12 +133,85 @@ function make_dom( opts )
         },
         [ pre, post ] = simple_dfs( domTree );
 
+    let frontiers = opts.frontiers;
+
+    /**
+     * This calculates the iterated dominance frontier quickest of all but requires
+     * that you have already computed the dominance frontier for each individual node.
+     * If you call this without frontiers being set, it will calculate all of them the
+     * first time.
+     *
+     * @param {Array<number>} defs
+     * @return {Array}
+     */
+    function alternative_idf( defs )
+    {
+        if ( !frontiers ) frontiers = frontiers_from_preds( simpleRefToSelf( nodes ), idoms );
+
+        const
+            _v = [],
+            added = [],
+            dfp = [],
+            add = n => added.includes( n ) || added.push( dfp[ dfp.length ] = n ),
+            worklist = defs.reduce( ( all, n ) => all.concat( frontiers[ n ] ), [] );
+
+        while ( worklist.length )
+        {
+            const
+                n = worklist.pop(),
+                front = frontiers[ n ];
+
+            _v[ n ] = true;
+            add( n );
+
+            for ( let i = 0, lng = front.length; i < lng; ++i )
+            {
+                const fi = front[ i ];
+                if ( _v[ fi ] !== true )
+                    worklist.push( fi );
+            }
+        }
+
+        return dfp;
+    }
+
+    /**
+     * Same as `iteratedDominanceFrontier( defs )` except it doesn't return anything but will
+     * invoke the callback as it discovers each node in the iterated dominance frontier.
+     *
+     * @param {function(number):*} fn   - A callback function with one argument, a node in the DF of the input list
+     * @param {Array<number>} defs      - A list of definition nodes
+     */
+    function forIteratedDominanceFrontier( fn, defs )
+    {
+        _iterated_dominance_frontier( fn, defs );
+    }
+
+    /**
+     * Given a list of definition nodes, let's call them start nodes, this will return the
+     * dominance frontier of those nodes. If you're doing SSA, this would be where you'd
+     * want to place phi-functions when building a normal SSA tree. To create a pruned or
+     * minimal tree, you'd probably have to discard some of these but it makes for a starting point.
+     *
+     * @param {Array<number>} defs      - A list of definition nodes
+     * @return {Array<number>}          - A list of all node sin the DF of the input set
+     */
+    function iteratedDominanceFrontier( defs )
+    {
+        const dfplus = [];
+
+        _iterated_dominance_frontier( n => dfplus.push( n ), defs );
+
+        return dfplus;
+    }
+
     /**
      * @param {function|Array<number>} fn
      * @param {Array<number>|function} [defs]
-     * @return {*[]}
+     * @return {Set<number>}
+     * @private
      */
-    function iterated_dominance_frontier( fn, defs )
+    function _iterated_dominance_frontier( fn, defs )
     {
         if ( array( fn ) )
         {
@@ -219,61 +229,74 @@ function make_dom( opts )
         }
 
         const
-            defSet     = new Set( defs ),
             dfPlus     = new Set(),
             visited    = [],
             byLevel    = [],
-            maxLevel   = maxDomLevel - 1,
+            maxLevel   = maxDomLevel,
             insertNode = x => byLevel[ domLevels[ x ] ].push( x );
 
-        let i = 0, currentRoot, z;
+        let i = 0, currentRoot, z, lastMax = maxLevel;
 
-        while ( i < maxDomLevel ) byLevel[ i++ ] = [];
+        while ( i <= maxLevel ) byLevel[ i++ ] = [];
 
         defs.forEach( insertNode );
 
         while ( ( z = get_deepest_node() ) !== null )
             visit( currentRoot = z );
 
+        /**
+         * @param {number} x
+         * @private
+         */
         function visit( x )
         {
             visited[ x ] = true;
 
-            const iter = succs( djGraph[ x ] );
+            const
+                [ dEdges, jEdges ] = djGraph[ x ];
 
-            for ( const { j, d } of iter )
+            for ( let i = 0, jlng = jEdges.length; i < jlng; ++i )
             {
-                if ( j !== null && domLevels[ j ] <= domLevels[ currentRoot ] && !dfPlus.has( j ) )
+                const
+                    j = jEdges[ i ],
+                    rootLevel = domLevels[ currentRoot ],
+                    jlvl = domLevels[ j ];
+
+                if ( jlvl <= rootLevel && !dfPlus.has( j ) )
                 {
                     if ( fn ) fn( j );
                     dfPlus.add( j );
-                    if ( !defSet.has( j ) ) // if ( !defs.includes( j ) )
-                        insertNode( j );
+                    if ( !defs.includes( j ) )
+                    {
+                        if ( jlvl > lastMax ) lastMax = jlvl;
+                        byLevel[ jlvl ].push( j );
+                    }
                 }
-                else if ( d !== null && !visited[ d ] )
-                    visit( d );
+            }
+
+
+            for ( let i = 0, dlng = dEdges.length; i < dlng; ++i )
+            {
+                const d = dEdges[ i ];
+                if ( d !== null && visited[ d ] === void 0 ) visit( d );
             }
         }
 
-        function *succs( [ dEdges, jEdges ] )
-        {
-            for ( const j of jEdges )
-                yield { j, d: null };
-
-            for ( const d of dEdges )
-                yield { j: null, d };
-        }
-
+        /**
+         * @private
+         * @return {?number}
+         */
         function get_deepest_node()
         {
-            let max = maxLevel;
+            let max = lastMax;
 
             while ( max >= 0 && byLevel[ max ].length === 0 ) --max;
 
+            lastMax = max;
             return max >= 0 ? byLevel[ max ].pop() : null;
         }
 
-        return [ ...dfPlus ];
+        return dfPlus; // [ ...dfPlus ];
     }
 
     /** ****************************************************************************************************************************
@@ -283,40 +306,48 @@ function make_dom( opts )
      *******************************************************************************************************************************/
 
     /**
+     * Loops through each strict dominator of the given node.
+     *
      * @param {function(number)} fn
-     * @param {number} dom
+     * @param {number} to
      */
-    function forStrictDominators( fn, dom )
+    function forStrictDominators( fn, to )
     {
-        walkUp( fn, idoms[ dom ] );
+        walkUp( fn, idoms[ to ] );
     }
 
     /**
-     * Note: This will visit the dominators starting with the 'to' node and moving up the idom tree
+     * This will visit the dominators starting with the `to` node and moving up the idom tree
      * until it gets to the root.
      *
      * @param {function(number)} fn
-     * @param {number} dom
+     * @param {number} to
      */
-    function forDominators( fn, dom )
+    function forDominators( fn, to )
     {
-        walkUp( fn, dom );
+        walkUp( fn, to );
     }
 
     /**
-     * @param {number} dom
+     * This will return all strict dominators for the given node. Same as `dominators` but
+     * excluding the given node.
+     *
+     * @param {number} to
      * @return {Array<number>}
      */
-    function strictDominators( dom )
+    function strictDominators( to )
     {
         const r = [];
 
-        walkUp( b => r.push( b ), idoms[ dom ] );
+        walkUp( b => r.push( b ), idoms[ to ] );
 
         return r;
     }
 
     /**
+     * This returns a list of all dominators for the given node, including the node itself since a node
+     * always dominates itself.
+     *
      * @return {Array<number>}
      */
     function dominators( block )
@@ -335,6 +366,12 @@ function make_dom( opts )
      *******************************************************************************************************************************/
 
     /**
+     * This will return one of two things. If call with two node numbers, it will return a `boolean` indicating
+     * if the first node strictly dominates the second node.
+     *
+     * If called with only one node number then it will create a list of all nodes strictly dominated by the given
+     * node.
+     *
      * @param {number} from
      * @param {number} [to]
      * @return {boolean|Array<number>}
@@ -351,6 +388,8 @@ function make_dom( opts )
     }
 
     /**
+     * This is the same as the `strictlyDominates()` function but includes the given node.
+     *
      * @param {number} from
      * @param {number} [to]
      * @return {boolean|Array<number>}
@@ -367,6 +406,8 @@ function make_dom( opts )
     }
 
     /**
+     * Thie loops through all nodes strictly dominated by the given node.
+     *
      * @param {function} fn
      * @param {number} from
      * @param {boolean} [notStrict]=false]
@@ -384,6 +425,8 @@ function make_dom( opts )
     }
 
     /**
+     * Thie loops through all nodes strictly dominated by the given node, including the node itself.
+     *
      * @param {function} fn
      * @param {number} from
      */
@@ -399,6 +442,16 @@ function make_dom( opts )
      *******************************************************************************************************************************/
 
     /**
+     * Paraphrasing from [Dominator (graph theory)](https://en.wikipedia.org/wiki/Dominator_(graph_theory)):
+     *
+     * >    "The dominance frontier of a block 'from' is the set of all blocks 'to' such that
+     * >    'from' dominates an immediate predecessor of 'to', but 'from' does not strictly
+     * >    dominate 'to'."
+     *
+     * A useful corner case to remember: a block may be in its own dominance frontier if it has
+     * a loop edge to itself, since it dominates itself and so it dominates its own immediate
+     * predecessor, and a block never strictly dominates itself.
+     *
      * @param {function} fn
      * @param {number} from
      */
@@ -411,34 +464,38 @@ function make_dom( opts )
     }
 
     /**
+     * Returns the dominanace frontier of a given node.
+     *
      * @param {number} from
      * @return {Array<number>}
      */
     function dominanceFrontier( from )
     {
+        if ( frontiers ) return frontiers[ from ];
+
         const result = new Set();
 
         forDominanceFrontier( node => result.add( node ), from );
         return [ ...result ];
     }
 
-    /**
-     * @param {function} fn
-     * @param {Array<number>} from
-     */
-    function forIteratedDominanceFrontier( fn, from )
-    {
-        const caller = block => {
-            fn( block );
-            return true;
-        };
-
-        forPrunedIteratedDominanceFrontier( caller, from );
-    }
+    // /**
+    //  * @param {function} fn
+    //  * @param {Array<number>} from
+    //  */
+    // function forIteratedDominanceFrontier( fn, from )
+    // {
+    //     const caller = block => {
+    //         fn( block );
+    //         return true;
+    //     };
+    //
+    //     forPrunedIteratedDominanceFrontier( caller, from );
+    // }
 
     /**
      * This is a close relative of forIteratedDominanceFrontier(), which allows the
-     * given functor to return false to indicate that we don't wish to consider the given block.
+     * given predicate function to return false to indicate that we don't wish to consider the given block.
      * Useful for computing pruned SSA form.
      *
      * @param {function} fn
@@ -453,34 +510,25 @@ function make_dom( opts )
         _forIteratedDominanceFrontier( block => add( block ) && fn( block ), from );
     }
 
+    // /**
+    //  * @param {Array<number>} from
+    //  * @return {Array<number>}
+    //  */
+    // function iteratedDominanceFrontier( from )
+    // {
+    //     const
+    //         _result = new Set(),
+    //         result  = adder( _result );
+    //
+    //     _forIteratedDominanceFrontier( result, from );
+    //
+    //     return [ ..._result ];
+    // }
+
     /**
-     * @param {Array<number>} from
-     * @return {Array<number>}
-     */
-    function iteratedDominanceFrontier( from )
-    {
-        const
-            _result = new Set(),
-            result  = adder( _result );
-
-        _forIteratedDominanceFrontier( result, from );
-
-        return [ ..._result ];
-    }
-
-    /**
-     * Paraphrasing from http:*en.wikipedia.org/wiki/Dominator_(graph_theory):
-     *
-     * >    "The dominance frontier of a block 'from' is the set of all blocks 'to' such that
-     * >    'from' dominates an immediate predecessor of 'to', but 'from' does not strictly
-     * >    dominate 'to'."
-     *
-     * A useful corner case to remember: a block may be in its own dominance frontier if it has
-     * a loop edge to itself, since it dominates itself and so it dominates its own immediate
-     * predecessor, and a block never strictly dominates itself.
-     *
      * @param {function} fn
      * @param {number} from
+     * @private
      */
     function _forDominanceFrontier( fn, from )
     {
@@ -494,12 +542,10 @@ function make_dom( opts )
      */
     function _forIteratedDominanceFrontier( fn, from )
     {
-        const worklist = from.slice();
+        const worklist = array( from ) ? from.slice() : [ from ];
 
         while ( worklist.length )
-        {
             _forDominanceFrontier( otherBlock => fn( otherBlock ) && worklist.push( otherBlock ), worklist.pop() );
-        }
     }
 
     return {
@@ -517,19 +563,17 @@ function make_dom( opts )
 
         forDominanceFrontier,
         dominanceFrontier,
-        forIteratedDominanceFrontier,
         forPrunedIteratedDominanceFrontier,
 
-        iterated_dominance_frontier,
-        iteratedDominanceFrontier
+        forIteratedDominanceFrontier,
+        iteratedDominanceFrontier,
+
+        alternative_idf
     };
 }
 
 
 module.exports = {
-    create_j_edges,
-    create_nodes,
-    create_dj_graph,
     make_dom,
     create_levels
 };

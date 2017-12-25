@@ -12,16 +12,19 @@ const
     { graph }           = require( '../data/dj.json' ),
     { normalize }       = require( '../src/utils' ),
     {
-        create_levels,
-        create_j_edges,
-        create_nodes,
-        create_dj_graph,
         make_dom
     }                   = require( '../src/dom-tree' ),
-    { create_dom_tree } = require( '../src/utils' ),
+    {
+        create_levels,
+        create_dj_graph,
+        create_nodes,
+        create_j_edges,
+        create_dom_tree
+    } = require( '../src/utils' ),
     iterative           = require( '../src/fast-iterative' ),
     nodes               = [
         {
+            id:       0,
             succs:    [ 1 ],
             preds:    [],
             domSuccs: [ 1 ],
@@ -32,6 +35,7 @@ const
             jPreds:   []
         },
         {
+            id:       1,
             succs:    [ 2, 10 ],
             preds:    [ 0, 6 ],
             domSuccs: [ 2, 10 ],
@@ -42,6 +46,7 @@ const
             jPreds:   [ 6 ]
         },
         {
+            id:       2,
             succs:    [ 3, 7 ],
             preds:    [ 1 ],
             domSuccs: [ 3, 4, 5, 7 ],
@@ -52,6 +57,7 @@ const
             jPreds:   []
         },
         {
+            id:       3,
             succs:    [ 4 ],
             preds:    [ 2 ],
             domSuccs: [],
@@ -62,6 +68,7 @@ const
             jPreds:   []
         },
         {
+            id:       4,
             succs:    [ 5 ],
             preds:    [ 3, 5 ],
             domSuccs: [],
@@ -72,6 +79,7 @@ const
             jPreds:   [ 3, 5 ]
         },
         {
+            id:       5,
             succs:    [ 4, 6 ],
             preds:    [ 4, 8 ],
             domSuccs: [ 6 ],
@@ -82,6 +90,7 @@ const
             jPreds:   [ 4, 8 ]
         },
         {
+            id:       6,
             succs:    [ 1 ],
             preds:    [ 5 ],
             domSuccs: [],
@@ -92,6 +101,7 @@ const
             jPreds:   []
         },
         {
+            id:       7,
             succs:    [ 8 ],
             preds:    [ 2, 9 ],
             domSuccs: [ 8 ],
@@ -102,6 +112,7 @@ const
             jPreds:   [ 9 ]
         },
         {
+            id:       8,
             succs:    [ 5, 9 ],
             preds:    [ 7 ],
             domSuccs: [ 9 ],
@@ -112,6 +123,7 @@ const
             jPreds:   []
         },
         {
+            id:       9,
             succs:    [ 7 ],
             preds:    [ 8 ],
             domSuccs: [],
@@ -122,6 +134,7 @@ const
             jPreds:   []
         },
         {
+            id:       10,
             succs:    [],
             preds:    [ 1 ],
             domSuccs: [],
@@ -216,7 +229,7 @@ describe( 'dominator tree utility functions', function() {
 
             let DFplus = dom.iteratedDominanceFrontier( [ 0, 2, 3, 6 ] );
             expect( DFplus ).to.have.members( [ 1, 4, 5 ] );
-            DFplus = dom.iterated_dominance_frontier( [ 0, 2, 3, 6 ] );
+            DFplus = dom.alternative_idf( [ 0, 2, 3, 6 ] );
             expect( DFplus ).to.have.members( [ 1, 4, 5 ] );
 
         } );
@@ -227,10 +240,11 @@ describe( 'dominator tree utility functions', function() {
 
             dom.forIteratedDominanceFrontier( dfp => DFplus.push( dfp ), [ 0, 2, 3, 6 ] );
             expect( DFplus ).to.have.members( [ 1, 4, 5 ] );
-            DFplus = dom.iterated_dominance_frontier( dfp => DFplus.push( dfp ), [ 0, 2, 3, 6 ] );
+            DFplus = dom.iteratedDominanceFrontier( [ 0, 2, 3, 6 ] );
             expect( DFplus ).to.have.members( [ 1, 4, 5 ] );
-            DFplus = dom.iterated_dominance_frontier( [ 0, 2, 3, 6 ], dfp => DFplus.push( dfp ) );
-            expect( DFplus ).to.have.members( [ 1, 4, 5 ] );
+            DFplus = [];
+            // dom.alternative_idf( [ 0, 2, 3, 6 ] );
+            // expect( DFplus ).to.have.members( [ 1, 4, 5 ] );
 
         } );
 
@@ -278,7 +292,7 @@ describe( 'dominator tree utility functions', function() {
 
             let dom = make_dom( { nodes: graph, idoms: iterative( graph ), djGraph: create_dj_graph( graph ) } );
 
-            let DFplus = dom.iterated_dominance_frontier( [ 0, 2, 3, 6 ] );
+            let DFplus = dom.iteratedDominanceFrontier( [ 0, 2, 3, 6 ] );
             expect( DFplus ).to.have.members( [ 1, 4, 5 ] );
 
 

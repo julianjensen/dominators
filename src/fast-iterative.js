@@ -14,6 +14,11 @@ const
     { DFS } = require( 'traversals' );
 
 /**
+ * Implements a near-linear time iterative dominator generator based on this
+ * paper: (A Simple, Fast Dominance Algorithm)[https://www.cs.rice.edu/~keith/Embed/dom.pdf]
+ * Citation:
+ * Cooper, Keith & Harvey, Timothy & Kennedy, Ken. (2006). A Simple, Fast Dominance Algorithm. Rice University, CS Technical Report 06-33870
+ *
  * @param {Array<Array<number>|number>} succs
  * @param {number} [startIndex=0]
  * @param {boolean} [flat=true]
@@ -27,6 +32,7 @@ function iterative( succs, startIndex = 0, flat = true )
     let changed = true;
 
     const
+        /** @type {Array<Array<number>>} */
         nsuccs = normalize( succs ),
         preds = succs_to_preds( nsuccs ),
         nodes = [];
@@ -41,6 +47,7 @@ function iterative( succs, startIndex = 0, flat = true )
 
     /**
      * @param {number} index
+     * @private
      */
     function find_idoms( index )
     {
