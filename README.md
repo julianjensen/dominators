@@ -1,7 +1,7 @@
 # dominators
 
 [![Greenkeeper badge](https://badges.greenkeeper.io/julianjensen/dominators.svg)](https://greenkeeper.io/)
-
+[![codecov](https://codecov.io/gh/julianjensen/dominators/branch/master/graph/badge.svg)](https://codecov.io/gh/julianjensen/dominators)
 [![Coveralls Status][coveralls-image]][coveralls-url]
 [![Build Status][travis-image]][travis-url]
 [![Dependency Status][depstat-image]][depstat-url]
