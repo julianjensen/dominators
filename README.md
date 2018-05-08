@@ -1,5 +1,7 @@
 # dominators
 
+[![Greenkeeper badge](https://badges.greenkeeper.io/julianjensen/dominators.svg)](https://greenkeeper.io/)
+
 [![Coveralls Status][coveralls-image]][coveralls-url]
 [![Build Status][travis-image]][travis-url]
 [![Dependency Status][depstat-image]][depstat-url]
