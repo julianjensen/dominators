@@ -83,7 +83,7 @@ console.log( `The strict dominators of 7 are ${myGraph.strictDominators( 7 ).joi
 
 ### Fast Lengauer-Tarjan LINK procedure
 
-For the sake of completeness, below is the fast balanaced version of link, which is not included in the current module code
+For the sake of completeness, below is the fast balanced version of link, which is not included in the current module code
 for two reasons:
 
 1. The LT algorithm with this LINK only becomes faster than the normal implementation when we're dealing with
@@ -153,16 +153,16 @@ MIT © [Julian Jensen](https://github.com/julianjensen/dominators)
 
 <dl>
 <dt><a href="#make_dom">make_dom(opts)</a> ⇒ <code>Object</code></dt>
-<dd><p>This will associated a graph with a number of useful utility functions. It will return an
+<dd><p>This will associate a graph with a number of useful utility functions. It will return an
 object with a variety of functions that operate on the graphs.</p>
 <p>You might notice that many of these functions I took from the WebKit <code>dominators.h</code> file, which
 I really liked, and, although I re-wrote the code completely (obviously, since it was in <code>C++</code>), I decided
 to keep their comments with a few small alterations or corrections. I decided to not use their iterated dominance frontier
 code, because it was as efficient as it could be. Instead, I implemented one that uses a DJ-graph
-that I found in Chapter 4 of &quot;The SSA Book,&quot; called &quot;Advanced Contruction Algorithms for SSA&quot; by
+that I found in Chapter 4 of &quot;The SSA Book,&quot; called &quot;Advanced Construction Algorithms for SSA&quot; by
 <em>D. Das</em>, <em>U. Ramakrishna</em>, <em>V. Sreedhar</em>. That book doesn&#39;t seem to be published or, if it has, I&#39;ve
 missed it. You can build the book yourself, supposedly, (I couldn&#39;t make that work, though) from here: <a href="https://gforge.inria.fr/scm/?group_id=1950">SSA Book</a>
-or you can probably find a PDF version of it somewhere on the web, which is what I did.</p>
+or you can probably find a <a href="http://ssabook.gforge.inria.fr/latest/book.pdf">PDF version</a> of it somewhere on the web, which is what I did.</p>
 </dd>
 <dt><a href="#iterative">iterative(succs, [startIndex], [flat])</a> ⇒ <code>Array.&lt;number&gt;</code></dt>
 <dd><p>Implements a near-linear time iterative dominator generator based on this
