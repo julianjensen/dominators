@@ -83,7 +83,7 @@ console.log( `The strict dominators of 7 are ${myGraph.strictDominators( 7 ).joi
 
 ### Fast Lengauer-Tarjan LINK procedure
 
-For the sake of completeness, below is the fast balanaced version of link, which is not included in the current module code
+For the sake of completeness, below is the fast balanced version of link, which is not included in the current module code
 for two reasons:
 
 1. The LT algorithm with this LINK only becomes faster than the normal implementation when we're dealing with
